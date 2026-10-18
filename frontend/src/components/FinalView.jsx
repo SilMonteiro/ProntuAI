@@ -65,7 +65,7 @@ export default function FinalView({ draft, conflicts, alertAcked, startedAt, onR
 
         <Block title="S — Subjetivo">
           <Row label="Queixa principal">{s.qp}</Row>
-          <Row label="História da moléstia atual">{s.hma}</Row>
+          <Row label="História da doença atual (HDA)">{s.hma}</Row>
           <Row label="Histórico pregresso e comorbidades">{s.hist}</Row>
           <Row label="Alergias">{s.alergias}</Row>
           <Row label="Medicamentos em uso">{s.meds}</Row>

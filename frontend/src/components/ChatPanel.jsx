@@ -31,7 +31,7 @@ export default function ChatPanel({ messages, typing, locked, onSend, prefill, o
 
   const submit = (v) => {
     const msg = (v ?? text).trim();
-    if (!msg || locked) return;
+    if (!msg || locked || typing) return;
     onSend(msg);
     setText('');
   };
@@ -79,11 +79,11 @@ export default function ChatPanel({ messages, typing, locked, onSend, prefill, o
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder={locked ? 'Prontuário homologado — edição bloqueada' : 'Peça um ajuste ao rascunho…'}
+          placeholder={locked ? 'Prontuário homologado — edição bloqueada' : typing ? 'Aguardando a resposta…' : 'Converse com a assistente sobre o rascunho…'}
           disabled={locked}
           aria-label="Mensagem para a assistente"
         />
-        <button type="submit" className="send" disabled={locked || !text.trim()} aria-label="Enviar">
+        <button type="submit" className="send" disabled={locked || typing || !text.trim()} aria-label="Enviar">
           <IconSend />
         </button>
       </form>

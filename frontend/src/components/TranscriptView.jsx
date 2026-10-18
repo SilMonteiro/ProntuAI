@@ -24,11 +24,11 @@ function renderText(seg, showTerms) {
 }
 
 // mode: 'live' (revela conforme o áudio), 'full' (replay) ou 'review' (mostra filtros/termos)
-export default function TranscriptView({ mode, pos = 0, highlight = [], onSeek, status }) {
+export default function TranscriptView({ mode, pos = 0, highlight = [], onSeek, status, segments = SEGMENTS, empty }) {
   const boxRef = useRef(null);
 
-  const visible = mode === 'live' ? SEGMENTS.filter((s) => s.start <= pos) : SEGMENTS;
-  const active = [...SEGMENTS].reverse().find((s) => s.start <= pos);
+  const visible = mode === 'live' ? segments.filter((s) => s.start <= pos) : segments;
+  const active = [...segments].reverse().find((s) => s.start <= pos);
 
   useEffect(() => {
     const box = boxRef.current;
@@ -52,8 +52,8 @@ export default function TranscriptView({ mode, pos = 0, highlight = [], onSeek, 
     <div className="transcript" ref={boxRef}>
       {visible.length === 0 && (
         <div className="empty">
-          <p className="h-sm">A transcrição aparecerá aqui</p>
-          <p className="muted">Inicie a gravação para capturar a conversa. Os turnos de fala do médico e do paciente são identificados automaticamente.</p>
+          <p className="h-sm">{empty?.title || 'A transcrição aparecerá aqui'}</p>
+          <p className="muted">{empty?.text || 'Inicie a gravação para capturar a conversa. Os turnos de fala do médico e do paciente são identificados automaticamente.'}</p>
         </div>
       )}
 

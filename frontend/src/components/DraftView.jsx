@@ -30,7 +30,7 @@ function Field({ label, path, draft, locked, flash, onChange, onEvidence }) {
     <div className={`field ${flash.includes(path) ? 'flash' : ''} ${isMissing(value) ? 'missing' : ''}`}>
       <div className="field-head">
         <label>{label}</label>
-        {ev.length > 0 && (
+        {ev.length > 0 && onEvidence && (
           <button type="button" className="link-btn" onClick={() => onEvidence(ev)}>
             <IconLink width={14} height={14} /> ver na transcrição
           </button>
@@ -66,7 +66,7 @@ function ListEditor({ label, path, items, fields, locked, flash, onChange, onEvi
     <div className={`field ${flash.includes(path) ? 'flash' : ''}`}>
       <div className="field-head">
         <label>{label}</label>
-        {ev.length > 0 && (
+        {ev.length > 0 && onEvidence && (
           <button type="button" className="link-btn" onClick={() => onEvidence(ev)}>
             <IconLink width={14} height={14} /> ver na transcrição
           </button>
@@ -152,9 +152,11 @@ function CidRow({ cid, locked, flash, onDecide, onEvidence }) {
         <strong>{cid.desc}</strong>
         <p className="muted small">
           <b>Evidência:</b> {cid.quote}{' '}
-          <button type="button" className="link-btn" onClick={() => onEvidence(cid.segs)}>
-            <IconLink width={14} height={14} /> ver
-          </button>
+          {onEvidence && (
+            <button type="button" className="link-btn" onClick={() => onEvidence(cid.segs)}>
+              <IconLink width={14} height={14} /> ver
+            </button>
+          )}
         </p>
       </div>
       <div className="cid-actions">
@@ -202,12 +204,12 @@ export function DraftLeft({ draft, locked, flash, conflictIds = [], onChange, on
       <Section letter="S" title="Subjetivo" subtitle="Relato do paciente e anamnese" prefix="s." flash={flash} defaultOpen
         summary={<>
           <Sum label="QP">{s.qp}</Sum>
-          <Sum label="HMA">{clip(s.hma, 170)}</Sum>
+          <Sum label="HDA">{clip(s.hma, 170)}</Sum>
           <Sum label="Alergias">{s.alergias}</Sum>
           <Sum label="Em uso">{clip(s.meds, 90)}</Sum>
         </>}>
         <Field {...common} label="Queixa principal (QP)" path="s.qp" />
-        <Field {...common} label="História da moléstia atual (HMA)" path="s.hma" />
+        <Field {...common} label="História da doença atual (HDA)" path="s.hma" />
         <Field {...common} label="Histórico médico pregresso e comorbidades" path="s.hist" />
         <Field {...common} label="Alergias" path="s.alergias" />
         <Field {...common} label="Medicamentos em uso contínuo" path="s.meds" />
@@ -258,7 +260,7 @@ export function DraftLeft({ draft, locked, flash, conflictIds = [], onChange, on
   );
 }
 
-export function DraftCenter({ draft, locked, flash, onChange, onCid, onEvidence }) {
+export function DraftCenter({ draft, locked, flash, onChange, onCid, onAcceptAll, onEvidence }) {
   const common = { draft, locked, flash, onChange, onEvidence };
   const pending = draft.a.cids.filter((c) => c.status === 'Sugerida').length;
   return (
@@ -276,7 +278,14 @@ export function DraftCenter({ draft, locked, flash, onChange, onCid, onEvidence 
         <div className={`field ${flash.includes('a.cids') ? 'flash' : ''}`}>
           <div className="field-head">
             <label>Sugestões de CID-10</label>
-            <span className="muted small">Aceite ou rejeite cada sugestão (REG-05)</span>
+            <div className="field-actions">
+              <span className="muted small">Aceite ou rejeite cada sugestão (REG-05)</span>
+              {!locked && pending > 0 && (
+                <button type="button" className="btn btn-sm btn-outline-ok" onClick={onAcceptAll}>
+                  <IconCheck width={14} height={14} /> Aceitar todos
+                </button>
+              )}
+            </div>
           </div>
           <ul className="cids">
             {draft.a.cids.map((c) => (

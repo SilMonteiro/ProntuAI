@@ -8,8 +8,11 @@ import ChatPanel from './components/ChatPanel.jsx';
 import { IconCheck, IconSparkle } from './components/Icons.jsx';
 import FinalView from './components/FinalView.jsx';
 import { usePlayback } from './hooks/usePlayback.js';
+import { useMicRecorder } from './hooks/useMicRecorder.js';
+import { transcribeAudio, toSegments } from './services/api.js';
+import { askAssistant } from './services/assistant.js';
 import { buildInitialDraft, DURATION, SEGMENTS } from './data/mock.js';
-import { findAllergyConflicts, fmtDateTime, pendencias, setIn } from './lib/draft.js';
+import { findAllergyConflicts, fmtDateTime, getIn, pendencias, setIn } from './lib/draft.js';
 import { respond } from './lib/chatEngine.js';
 
 const WELCOME = {
@@ -19,9 +22,16 @@ const WELCOME = {
 
 export default function App() {
   const [phase, setPhase] = useState('idle'); // idle | recording | recorded | generating | review | final
-  const [transcriptionStatus, setTranscriptionStatus] = useState(null); // Gravando | Processando | Concluida
+  const [transcriptionStatus, setTranscriptionStatus] = useState(null); // Gravando | Processando | Concluida | Erro
   const [voiceOn, setVoiceOn] = useState(false);
   const [startedAt, setStartedAt] = useState(null);
+  const [mode, setMode] = useState('real'); // real (microfone + backend) | sim (consulta mockada)
+  const [segments, setSegments] = useState(SEGMENTS);
+  const [audio, setAudio] = useState(null); // { blob, filename, url }
+  const [audioPos, setAudioPos] = useState(0);
+  const [transcriptError, setTranscriptError] = useState(null);
+  const audioRef = useRef(null);
+  const mic = useMicRecorder();
 
   const [draft, setDraft] = useState(null);
   const [flash, setFlash] = useState([]);
@@ -43,7 +53,7 @@ export default function App() {
     setTimeout(() => setTranscriptionStatus('Concluida'), 1400);
   }, []);
   const pb = usePlayback(DURATION, () => {
-    if (phase === 'recording') finishRecording();
+    if (phase === 'recording' && mode === 'sim') finishRecording();
   });
 
   /* ---------- áudio / voz sintética ---------- */
@@ -66,23 +76,89 @@ export default function App() {
   };
 
   /* ---------- fluxo de gravação (FL-01 / FL-02) ---------- */
-  const start = () => {
+  const runTranscription = async ({ blob, filename }) => {
+    setPhase('recorded');
+    setTranscriptionStatus('Processando');
+    setTranscriptError(null);
+    try {
+      const data = await transcribeAudio(blob, filename);
+      const segs = toSegments(data.segments || []);
+      if (!segs.length) throw new Error('Nenhuma fala foi identificada no áudio. Grave novamente mais perto do microfone.');
+      setSegments(segs);
+      setTranscriptionStatus('Concluida');
+    } catch (err) {
+      setTranscriptError(err.message);
+      setTranscriptionStatus('Erro');
+    }
+  };
+  const setAudioFile = (blob, filename) => {
+    if (audio?.url) URL.revokeObjectURL(audio.url);
+    const next = { blob, filename, url: URL.createObjectURL(blob) };
+    setAudio(next);
+    setAudioPos(0);
+    return next;
+  };
+
+  const start = async () => {
     setStartedAt(new Date());
+    setSegments(mode === 'sim' ? SEGMENTS : []);
+    if (mode === 'real') {
+      try {
+        await mic.start();
+      } catch {
+        notify('Não foi possível acessar o microfone. Verifique a permissão do navegador.');
+        return;
+      }
+      setPhase('recording');
+      setTranscriptionStatus('Gravando');
+      return;
+    }
     setPhase('recording');
     setTranscriptionStatus('Gravando');
     pb.reset();
     setTimeout(pb.play, 50);
   };
-  const stop = () => {
+  const stop = async () => {
+    if (mode === 'real') {
+      const blob = await mic.stop();
+      if (!blob || !blob.size) {
+        notify('A gravação ficou vazia. Tente novamente.');
+        setPhase('idle');
+        setTranscriptionStatus(null);
+        return;
+      }
+      const ext = blob.type.startsWith('audio/ogg') ? 'ogg' : blob.type.startsWith('audio/mp4') ? 'm4a' : 'webm';
+      runTranscription(setAudioFile(blob, `consulta.${ext}`));
+      return;
+    }
     pb.pause();
     pb.seek(DURATION);
     finishRecording();
+  };
+  const upload = (file) => {
+    if (file.size > 25 * 1024 * 1024) {
+      notify('O arquivo excede o limite de 25 MB.');
+      return;
+    }
+    setStartedAt(new Date());
+    setSegments([]);
+    runTranscription(setAudioFile(file, file.name));
+  };
+  const retry = () => audio && runTranscription(audio);
+  const resetRecording = () => {
+    mic.cancel();
+    pb.reset();
+    setPhase('idle');
+    setTranscriptionStatus(null);
+    setTranscriptError(null);
+    setSegments(mode === 'sim' ? SEGMENTS : []);
   };
   const skip = () => {
     pb.seek(DURATION - 0.3);
   };
   const generate = () => {
     pb.pause();
+    audioRef.current?.pause();
     setPhase('generating');
   };
   const onGenerated = useCallback(() => {
@@ -104,6 +180,11 @@ export default function App() {
   const onCid = (id, status) =>
     setDraft((d) => touch({ ...d, a: { ...d.a, cids: d.a.cids.map((c) => (c.id === id ? { ...c, status } : c)) } }));
 
+  const acceptAllCids = () =>
+    setDraft((d) =>
+      touch({ ...d, a: { ...d.a, cids: d.a.cids.map((c) => (c.status === 'Sugerida' ? { ...c, status: 'Aceita' } : c)) } }),
+    );
+
   const conflicts = useMemo(() => (draft ? findAllergyConflicts(draft) : []), [draft]);
   const conflictKey = conflicts.map((c) => `${c.rxId}:${c.med}`).join('|');
   const alertAcked = conflicts.length > 0 && ackedKey === conflictKey;
@@ -114,22 +195,49 @@ export default function App() {
     setRightTab('transcript');
   };
 
-  const send = (text) => {
+  // Aplica só as seções que o assistente mudou, sobre o estado atual (o médico pode ter editado durante a espera).
+  const applyResult = (serverDraft, paths, reply, log, prefix = '') => {
+    if (paths.length) {
+      setDraft((d) => {
+        let next = d;
+        for (const p of paths) next = setIn(next, p, getIn(serverDraft, p));
+        return touch(next);
+      });
+      flashPaths(paths);
+    }
+    setMessages((m) => [
+      ...m,
+      { role: 'ai', text: `${prefix}${reply}` },
+      ...(log ? [{ role: 'system', text: `Alteração aplicada — ${log}` }] : []),
+    ]);
+  };
+
+  const busyRef = useRef(false);
+  const send = async (text) => {
+    if (busyRef.current) return;
+    busyRef.current = true;
+    const history = messages
+      .filter((m) => m.role !== 'system')
+      .slice(-10)
+      .map((m) => ({ role: m.role, text: m.text }));
     setMessages((m) => [...m, { role: 'user', text }]);
     setTyping(true);
-    setTimeout(() => {
+    try {
+      const data = await askAssistant({
+        draft: draftRef.current,
+        message: text,
+        history,
+        transcript: segments.map((s) => ({ role: s.speaker === 'M' ? 'medico' : 'paciente', text: s.text })),
+      });
+      applyResult(data.draft, data.changed_paths, data.reply, data.log);
+    } catch (err) {
+      // Plano B: regras locais, sinalizadas como tal para o médico.
       const res = respond(text, draftRef.current);
+      applyResult(res.draft, res.changed, res.reply, res.log, `*${err.message} Modo offline (regras locais):* `);
+    } finally {
       setTyping(false);
-      setMessages((m) => [
-        ...m,
-        { role: 'ai', text: res.reply },
-        ...(res.log ? [{ role: 'system', text: `Alteração aplicada — ${res.log}` }] : []),
-      ]);
-      if (res.changed.length) {
-        setDraft(touch(res.draft));
-        flashPaths(res.changed);
-      }
-    }, 900);
+      busyRef.current = false;
+    }
   };
 
   /* ---------- homologação (FL-04) ---------- */
@@ -151,8 +259,11 @@ export default function App() {
   const restart = () => {
     window.speechSynthesis?.cancel();
     pb.reset();
+    mic.cancel();
     setDraft(null);
     setPhase('idle');
+    setSegments(mode === 'sim' ? SEGMENTS : []);
+    setTranscriptError(null);
     setTranscriptionStatus(null);
     setReviewed(false);
     setAckedKey(null);
@@ -175,8 +286,21 @@ export default function App() {
         {!inReview && phase !== 'generating' && (
           <div className="grid-main">
             <Recorder
+              mode={mode}
+              setMode={(m) => {
+                setMode(m);
+                setSegments(m === 'sim' ? SEGMENTS : []);
+              }}
               phase={phase}
               pb={pb}
+              mic={mic}
+              audioUrl={audio?.url}
+              audioRef={audioRef}
+              onAudioTime={setAudioPos}
+              onUpload={upload}
+              onRetry={retry}
+              onReset={resetRecording}
+              error={transcriptError}
               voiceOn={voiceOn}
               setVoiceOn={setVoiceOn}
               onStart={start}
@@ -197,11 +321,38 @@ export default function App() {
                   </span>
                 )}
               </div>
-              <TranscriptView
-                mode={phase === 'recording' ? 'live' : phase === 'idle' ? 'live' : 'full'}
-                pos={phase === 'recording' || phase === 'idle' || pb.pos < DURATION ? pb.pos : 0}
-                onSeek={phase === 'recorded' ? pb.seek : undefined}
-              />
+              {mode === 'real' ? (
+                <TranscriptView
+                  mode="full"
+                  segments={transcriptionStatus === 'Concluida' ? segments : []}
+                  pos={audioPos}
+                  onSeek={
+                    transcriptionStatus === 'Concluida'
+                      ? (t) => {
+                          if (audioRef.current) {
+                            audioRef.current.currentTime = t;
+                            audioRef.current.play();
+                          }
+                        }
+                      : undefined
+                  }
+                  empty={
+                    phase === 'recording'
+                      ? { title: 'Gravando a consulta…', text: 'Converse normalmente. A transcrição com identificação de médico e paciente é gerada quando você parar a gravação.' }
+                      : transcriptionStatus === 'Processando'
+                        ? { title: 'Transcrevendo…', text: 'O áudio foi enviado ao backend. Separando locutores e classificando médico e paciente.' }
+                        : transcriptionStatus === 'Erro'
+                          ? { title: 'Não foi possível transcrever', text: transcriptError }
+                          : undefined
+                  }
+                />
+              ) : (
+                <TranscriptView
+                  mode={phase === 'recording' ? 'live' : phase === 'idle' ? 'live' : 'full'}
+                  pos={phase === 'recording' || phase === 'idle' || pb.pos < DURATION ? pb.pos : 0}
+                  onSeek={phase === 'recorded' ? pb.seek : undefined}
+                />
+              )}
             </section>
           </div>
         )}
@@ -233,7 +384,7 @@ export default function App() {
                 flash={flash}
                 conflictIds={conflicts.map((c) => c.rxId)}
                 onChange={onChange}
-                onEvidence={showEvidence}
+                onEvidence={mode === 'sim' ? showEvidence : undefined}
               />
               <DraftCenter
                 draft={draft}
@@ -241,7 +392,8 @@ export default function App() {
                 flash={flash}
                 onChange={onChange}
                 onCid={onCid}
-                onEvidence={showEvidence}
+                onAcceptAll={acceptAllCids}
+                onEvidence={mode === 'sim' ? showEvidence : undefined}
               />
 
               <aside className="side">
@@ -268,7 +420,7 @@ export default function App() {
                       <p className="muted small legend">
                         <mark className="term">termo popular</mark> → termo médico · trechos esmaecidos foram filtrados da nota.
                       </p>
-                      <TranscriptView mode="review" highlight={highlight} />
+                      <TranscriptView mode="review" highlight={highlight} segments={segments} />
                     </div>
                   )}
                 </div>

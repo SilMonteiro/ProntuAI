@@ -23,7 +23,7 @@ export const SUGGESTIONS = [
   'Substitua a dipirona por paracetamol 750 mg',
   'Altere o retorno para 15 dias',
   'Adicione hemograma aos exames solicitados',
-  'Resuma a história da moléstia atual',
+  'Resuma a HDA',
   'Por que você sugeriu o CID K21.9?',
   'Registre temperatura de 36,5 °C',
 ];
@@ -168,8 +168,8 @@ export function respond(text, draft) {
     return {
       draft: { ...draft, s: { ...draft.s, hma } },
       changed: ['s.hma'],
-      log: 'Subjetivo › HMA: texto resumido',
-      reply: 'Resumi a História da Moléstia Atual mantendo apenas os fatos mencionados na consulta.',
+      log: 'Subjetivo › HDA: texto resumido',
+      reply: 'Resumi a História da Doença Atual (HDA) mantendo apenas os fatos mencionados na consulta.',
     };
   }
 
@@ -187,7 +187,7 @@ export function respond(text, draft) {
     return {
       ...nothing,
       reply:
-        'Posso ajustar o rascunho a seu pedido: trocar ou remover medicamentos, incluir exames, mudar o prazo de retorno, resumir a HMA, aceitar/rejeitar CIDs e explicar as evidências. Tudo continua pendente da sua homologação.',
+        'Posso ajustar o rascunho a seu pedido: trocar ou remover medicamentos, incluir exames, mudar o prazo de retorno, resumir a HDA, aceitar/rejeitar CIDs e explicar as evidências. Tudo continua pendente da sua homologação.',
     };
   }
 

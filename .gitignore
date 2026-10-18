@@ -3,3 +3,13 @@ tools/
 logs/
 node_modules/
 dist/
+
+# Backend
+.env
+.env.*
+!.env.example
+.venv*/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+backend/data/
