@@ -315,8 +315,8 @@ export default function App() {
                   <h2 className="h-sm">Transcrição</h2>
                   <p className="muted small">Médico × Paciente, com identificação de locutor</p>
                 </div>
-                {transcriptionStatus && (
-                  <span className={`badge ${transcriptionStatus === 'Concluida' ? 'badge-success' : transcriptionStatus === 'Gravando' ? 'badge-critical' : 'badge-attention'}`}>
+                {transcriptionStatus && transcriptionStatus !== 'Gravando' && (
+                  <span className={`badge ${transcriptionStatus === 'Concluida' ? 'badge-success' : 'badge-attention'}`}>
                     {transcriptionStatus === 'Concluida' ? 'Concluída' : transcriptionStatus}
                   </span>
                 )}

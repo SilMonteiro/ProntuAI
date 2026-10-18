@@ -33,13 +33,6 @@ function Waveform({ pos, live, showProgress, onSeek, levels }) {
   );
 }
 
-const STATUS_BADGE = {
-  Gravando: null,
-  Processando: ['badge-attention', 'Transcrevendo…'],
-  Concluida: ['badge-success', 'Transcrição concluída'],
-  Erro: ['badge-critical', 'Falha na transcrição'],
-};
-
 export default function Recorder({
   mode,
   setMode,
@@ -67,7 +60,6 @@ export default function Recorder({
   const recorded = phase === 'recorded';
   const processing = transcriptionStatus === 'Processando';
   const failed = transcriptionStatus === 'Erro';
-  const badge = recorded ? STATUS_BADGE[transcriptionStatus] : null;
 
   return (
     <section className="card recorder">
@@ -78,12 +70,6 @@ export default function Recorder({
             {real ? 'Microfone do navegador · transcrição com IA no backend.' : 'Consulta simulada para demonstração.'}
           </p>
         </div>
-        {recording && (
-          <span className="badge badge-critical rec-badge">
-            <i className="dot" /> Gravando
-          </span>
-        )}
-        {badge && <span className={`badge ${badge[0]}`}>{badge[1]}</span>}
       </div>
 
       {phase === 'idle' && (
@@ -125,7 +111,7 @@ export default function Recorder({
       <div className="controls">
         {phase === 'idle' && (
           <>
-            <button className="btn btn-primary btn-lg" type="button" onClick={onStart}>
+            <button className="btn btn-rec btn-lg" type="button" onClick={onStart}>
               <IconMic /> Iniciar gravação
             </button>
             {real && (

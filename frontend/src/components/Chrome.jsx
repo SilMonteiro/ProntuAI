@@ -13,7 +13,7 @@ export function TopNav() {
         </div>
         <nav className="nav-tabs" aria-label="Principal">
           {tabs.map((t, i) => (
-            <button key={t} className={`pill-tab ${i === 0 ? 'active' : ''}`} type="button">
+            <button key={t} className={`nav-tab ${i === 0 ? 'active' : ''}`} type="button" aria-current={i === 0 ? 'page' : undefined}>
               {t}
             </button>
           ))}

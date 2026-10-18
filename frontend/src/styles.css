@@ -107,13 +107,18 @@ mark { background: none; }
 .link-btn { background: none; border: 0; padding: 0; color: var(--primary); font-size: 12.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
 
 /* ---------- stepper ---------- */
-.stepper { display: flex; gap: 10px; flex-wrap: wrap; }
-.step { display: flex; align-items: center; gap: 8px; padding: 6px 16px 6px 6px; border-radius: 100px; border: 1px solid var(--hairline); font-size: 14px; font-weight: 700; color: var(--steel); }
-.step-dot { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; background: var(--surface-soft); }
-.step.active { background: var(--ink-deep); color: #fff; border-color: var(--ink-deep); }
-.step.active .step-dot { background: #fff; color: var(--ink-deep); }
+.stepper { display: flex; align-items: flex-start; gap: 0; padding: 4px 4px 0; counter-reset: step; }
+.step { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; position: relative; font-size: 13px; font-weight: 700; color: var(--stone); text-align: center; }
+.step::before { content: ''; position: absolute; top: 15px; left: calc(-50% + 22px); right: calc(50% + 22px); height: 2px; background: var(--hairline-soft); z-index: 0; }
+.step:first-child::before { display: none; }
+.step.done::before, .step.active::before { background: var(--success); }
+.step.active::before { background: linear-gradient(90deg, var(--success), var(--primary)); }
+.step-dot { position: relative; z-index: 1; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 700; background: var(--canvas); color: var(--stone); border: 2px solid var(--hairline); box-shadow: 0 0 0 4px var(--canvas); }
+.step-label { line-height: 1.3; }
+.step.active { color: var(--ink-deep); }
+.step.active .step-dot { background: var(--primary); border-color: var(--primary); color: #fff; box-shadow: 0 0 0 4px rgba(0, 100, 224, 0.15); }
 .step.done { color: var(--ink); }
-.step.done .step-dot { background: var(--success); color: #fff; }
+.step.done .step-dot { background: var(--success); border-color: var(--success); color: #fff; }
 
 /* ---------- gravador ---------- */
 .recorder { position: sticky; top: 88px; }
@@ -141,12 +146,19 @@ mark { background: none; }
 .transcript { height: 520px; overflow-y: auto; position: relative; display: flex; flex-direction: column; gap: 10px; padding-right: 6px; }
 .empty { margin: auto; text-align: center; max-width: 320px; display: grid; gap: 8px; }
 .line { display: flex; gap: 10px; align-items: flex-start; border-radius: 16px; padding: 4px; transition: background 0.3s; }
+/* Estilo de conversa: médico à esquerda, paciente à direita */
+.line.pat { flex-direction: row-reverse; justify-content: flex-start; }
+.line.pat .who { text-align: center; }
+.line .bubble { flex: 0 1 auto; max-width: 80%; }
+.line.pat .bubble { border-radius: 16px 4px 16px 16px; }
+.line.doc .bubble { border-radius: 4px 16px 16px 16px; }
+.line.pat .time { display: block; text-align: right; }
 .line .who { width: 44px; flex: none; text-align: center; }
 .who-dot { display: grid; place-items: center; width: 36px; height: 36px; margin: 0 auto 2px; border-radius: 50%; font-size: 11px; font-weight: 700; }
 .line.doc .who-dot { background: var(--ink-deep); color: #fff; }
 .line.pat .who-dot { background: var(--primary-tint); color: var(--primary-deep); }
 .time { font-size: 11px; color: var(--stone); font-variant-numeric: tabular-nums; }
-.bubble { flex: 1; min-width: 0; background: var(--surface-soft); border-radius: 4px 16px 16px 16px; padding: 10px 14px; font-size: 14px; }
+.bubble { min-width: 0; background: var(--surface-soft); border-radius: 4px 16px 16px 16px; padding: 10px 14px; font-size: 14px; }
 .line.pat .bubble { background: #eaf2fd; }
 .bubble .badge { margin-top: 6px; }
 .line.filtered { opacity: 0.5; }
@@ -393,3 +405,30 @@ mark { background: none; }
 .processing { display: inline-flex; align-items: center; gap: 10px; }
 
 .field-actions { display: flex; align-items: center; gap: 10px; }
+
+/* ---------- navegação: abas em texto, sem aparência de botão ---------- */
+.nav-tabs { gap: 4px; }
+.nav-tab {
+  background: none; border: 0; border-bottom: 3px solid transparent; border-radius: 0;
+  padding: 22px 12px 19px; font-size: 14.5px; font-weight: 600; color: var(--steel);
+  transition: color 0.2s, border-color 0.2s;
+}
+.nav-tab:hover { color: var(--ink-deep); }
+.nav-tab.active { color: var(--ink-deep); font-weight: 700; border-bottom-color: var(--ink-deep); }
+
+/* ---------- seleção de modo e velocidade: aparência de botão com hover azul ---------- */
+.mode-switch .pill-tab, .speed .pill-tab {
+  background: var(--canvas); border: 1px solid var(--hairline); color: var(--charcoal);
+  transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.1s;
+}
+.mode-switch .pill-tab:hover, .speed .pill-tab:hover {
+  background: #eef5ff; border-color: var(--primary); color: var(--primary-deep);
+}
+.mode-switch .pill-tab:active, .speed .pill-tab:active { transform: scale(0.97); }
+.mode-switch .pill-tab.active, .speed .pill-tab.active { background: var(--ink-deep); border-color: var(--ink-deep); color: #fff; }
+
+/* ---------- iniciar gravação: vermelho sutil ---------- */
+.btn-rec { background: #fdf0f2; color: #b3152f; border-color: #f2b8c3; transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.1s; }
+.btn-rec:hover { background: #fbe1e6; border-color: #e8788c; color: #9a1028; }
+.btn-rec:active { transform: scale(0.98); background: #f7d0d8; }
+.btn-rec svg { color: #e41e3f; }
