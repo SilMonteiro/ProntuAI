@@ -80,3 +80,7 @@
 [data-theme='dark'] .row { background: #161b21; border-color: var(--hairline-soft); }
 [data-theme='dark'] .row.conflict { background: rgba(228, 30, 63, 0.12); border-color: rgba(228, 30, 63, 0.4); }
 [data-theme='dark'] .field > .btn-ghost.btn-sm:hover { background: #1a2a44; }
+
+[data-theme='dark'] .card, [data-theme='dark'] .acc-item, [data-theme='dark'] .tl-item, [data-theme='dark'] .finish-zone {
+  box-shadow: rgba(0, 0, 0, 0.35) 0 1px 2px 0, rgba(0, 0, 0, 0.3) 0 4px 14px 0;
+}

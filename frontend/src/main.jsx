@@ -4,5 +4,6 @@ import App from './App.jsx';
 import './styles.css';
 import './styles-review.css';
 import './styles-dark.css';
+import './styles-history.css';
 
 createRoot(document.getElementById('root')).render(<App />);

@@ -13,6 +13,8 @@ import { transcribeAudio, toSegments } from './services/api.js';
 import { askAssistant } from './services/assistant.js';
 import { generateDraft } from './services/prontuario.js';
 import { buildInitialDraft, DURATION, EVIDENCE, PACIENTES, PROCESSING_STATS, SEGMENTS } from './data/mock.js';
+import { HISTORICO } from './data/historico.js';
+import HistoryView from './components/HistoryView.jsx';
 import { findAllergyConflicts, fmtDateTime, getIn, pendencias, setIn } from './lib/draft.js';
 import { respond } from './lib/chatEngine.js';
 
@@ -37,6 +39,7 @@ function welcomeFor(draft, stats) {
 
 export default function App() {
   const [patientId, setPatientId] = useState(PACIENTES[0].id);
+  const [view, setView] = useState('atendimento'); // atendimento | historico | prontuarios
   const patient = PACIENTES.find((p) => p.id === patientId);
   const [evidence, setEvidence] = useState(EVIDENCE);
   const [gen, setGen] = useState({ ready: true, error: null, stats: PROCESSING_STATS });
@@ -45,7 +48,7 @@ export default function App() {
   const [phase, setPhase] = useState('idle'); // idle | recording | recorded | generating | review | final
   const [transcriptionStatus, setTranscriptionStatus] = useState(null); // Gravando | Processando | Concluida | Erro
   const [startedAt, setStartedAt] = useState(null);
-  const [mode, setMode] = useState('real'); // real (microfone + backend) | sim (consulta mockada)
+  const [mode, setMode] = useState('sim'); // real (microfone + backend) | sim (consulta mockada)
   const [segments, setSegments] = useState(SEGMENTS);
   const [audio, setAudio] = useState(null); // { blob, filename, url }
   const [audioPos, setAudioPos] = useState(0);
@@ -344,6 +347,7 @@ export default function App() {
     setMode('real');
     setSegments([]);
     setPatientId(id);
+    setView('atendimento');
   };
 
   /* ---------- derivados de UI ---------- */
@@ -355,7 +359,34 @@ export default function App() {
     <>
       <TopNav />
       <main className="page">
-        <div className="no-print"><PatientHeader consulta={consulta} dataHora={startedAt ? fmtDateTime(startedAt) : null} patient={patient} patients={PACIENTES} onSelect={switchPatient} /></div>
+        <div className="no-print">
+          <PatientHeader
+            consulta={consulta}
+            dataHora={startedAt ? fmtDateTime(startedAt) : null}
+            patient={patient}
+            patients={PACIENTES}
+            onSelect={switchPatient}
+            actions={
+              <>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => setView('historico')}>
+                  Histórico de consultas
+                </button>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => setView('prontuarios')}>
+                  Prontuários anteriores
+                </button>
+              </>
+            }
+          />
+        </div>
+        {view !== 'atendimento' && (
+          <HistoryView
+            mode={view}
+            consultas={HISTORICO[patient.id] || []}
+            patient={patient}
+            onBack={() => setView('atendimento')}
+          />
+        )}
+        {view === 'atendimento' && (<>
         {phase === 'final' ? (
           <div className="done-icon" role="img" aria-label="Consulta concluída">
             <IconCheck width={28} height={28} strokeWidth={3} />
@@ -514,6 +545,7 @@ export default function App() {
             )}
           </>
         )}
+        </>)}
       </main>
       {toast && <div className="toast">{toast}</div>}
     </>

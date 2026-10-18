@@ -92,7 +92,7 @@ const CONSULTA_BADGE = {
   Finalizada: ['badge-success', 'Consulta finalizada'],
 };
 
-export function PatientHeader({ consulta, dataHora, patient, patients, onSelect }) {
+export function PatientHeader({ consulta, dataHora, patient, patients, onSelect, actions }) {
   const [cls, label] = CONSULTA_BADGE[consulta];
   const [open, setOpen] = useState(false);
   const boxRef = useRef(null);
@@ -163,6 +163,7 @@ export function PatientHeader({ consulta, dataHora, patient, patients, onSelect 
           {MEDICO.nome} · {MEDICO.crm}
           {dataHora ? ` · ${dataHora}` : ''}
         </p>
+        {actions && <div className="patient-actions">{actions}</div>}
       </div>
     </section>
   );
