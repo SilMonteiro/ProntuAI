@@ -8,7 +8,7 @@ backend/   FastAPI — gravação/transcrição real via OpenAI
 ```
 
 
-### Resumo do funcionamento
+## Resumo do funcionamento
 
 O texto transcrito é enviado como conteúdo de entrada (user message) em uma chamada de API para o modelo de linguagem.
 
@@ -16,7 +16,7 @@ A requisição envia também um System Prompt *rigoroso* contendo as diretrizes 
 
 
 
-### Modos de gravação
+## Modos de gravação
 - **Microfone real** (padrão): grava pelo navegador, envia ao backend ao parar e mostra a transcrição com médico/paciente. Também aceita envio de arquivo de áudio.
 - **Consulta simulada**: reproduz a consulta mockada (Maria Aparecida Souza), sem backend — útil como plano B na apresentação.
 
@@ -24,7 +24,7 @@ A requisição envia também um System Prompt *rigoroso* contendo as diretrizes 
 
 
 
-### Roteiro para DEMO
+## Roteiro para DEMO
 
 Tela Mockada para Teste → usuário: **Maria Aparecida Souza**
 
@@ -43,7 +43,7 @@ Regras da proposta cobertas: REG-01 (human-in-the-loop), REG-02 (fidelidade), RE
 
 
 
-### FUNCIONAMENTO REAL COM PROCESSAMENTO DE IA
+## FUNCIONAMENTO REAL COM PROCESSAMENTO DE IA
 
 Tela com Funcionamento Real → Usuário: **João Pedro Almeida**
 
@@ -88,7 +88,7 @@ npm run dev     # http://127.0.0.1:5180  (o /api é encaminhado ao backend)
 ```
 
 
-### Uso Atual da OpenAI e Adaptação para Outras IAs
+## Uso Atual da OpenAI e Adaptação para Outras IAs
 
 Atualmente, o projeto foi implementado utilizando nativamente a infraestrutura, os SDKs e os modelos da OpenAI.
 
