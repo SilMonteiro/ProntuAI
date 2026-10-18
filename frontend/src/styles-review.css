@@ -117,3 +117,17 @@ body { zoom: 1.12; }
 .alert-body strong { display: block; }
 .alert-body p { margin: 0; min-width: 0; }
 .alert-body .alert-actions { margin-top: 8px; }
+
+/* gravação e transcrição com a mesma altura */
+.grid-main { align-items: stretch; }
+.recorder { position: static; display: flex; flex-direction: column; }
+.recorder .wave { flex: 1; min-height: 120px; margin: 18px 0 22px; }
+.recorder .controls { margin-top: auto; }
+.transcript-card { display: flex; flex-direction: column; }
+.transcript-card .transcript { flex: 1; height: auto; min-height: 360px; }
+
+/* altura fixa: a gravação não cresce com a transcrição; a transcrição rola internamente */
+.grid-main { grid-template-rows: 600px; }
+.recorder, .transcript-card { height: 100%; min-height: 0; overflow: hidden; }
+.transcript-card .transcript { min-height: 0; flex: 1 1 0; height: auto; overflow-y: auto; }
+.grid-main { height: 600px; grid-template-rows: minmax(0, 1fr); row-gap: 0; align-items: stretch; }
