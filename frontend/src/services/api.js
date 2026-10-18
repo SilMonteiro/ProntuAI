@@ -10,7 +10,8 @@ export async function transcribeAudio(blob, filename) {
   } catch {
     throw new Error('Não foi possível conectar ao backend. Verifique se ele está rodando na porta 8000.');
   }
-  const data = await response.json().catch(() => ({}));
+  const data = await response.json().catch(() => null);
+  if (!data) throw new Error('O servidor não respondeu como a API de transcrição. Verifique se o backend de IA está ativo.');
   if (!response.ok) throw new Error(data.detail || `Falha na transcrição (HTTP ${response.status}).`);
   return data;
 }

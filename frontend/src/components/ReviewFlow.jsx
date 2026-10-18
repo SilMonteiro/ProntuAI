@@ -22,6 +22,7 @@ function CheckItem({ ok, label }) {
 // Revisão em subetapas recolhíveis: cada etapa pode ser aberta e lida com calma.
 export default function ReviewFlow({
   draft,
+  evidence,
   locked,
   flash,
   conflicts,
@@ -40,7 +41,7 @@ export default function ReviewFlow({
   const [seen, setSeen] = useState(() => new Set());
   const pendingCids = draft.a.cids.filter((c) => c.status === 'Sugerida').length;
   const alertOk = conflicts.length === 0 || alertAcked;
-  const common = { draft, locked, flash, onChange, onEvidence };
+  const common = { draft, evidence, locked, flash, onChange, onEvidence };
 
   // Abre a etapa que a assistente acabou de alterar.
   useEffect(() => {

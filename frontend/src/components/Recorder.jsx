@@ -34,6 +34,7 @@ function Waveform({ pos, live, showProgress, onSeek, levels }) {
 }
 
 export default function Recorder({
+  allowSim = true,
   mode,
   setMode,
   phase,
@@ -70,7 +71,7 @@ export default function Recorder({
         </div>
       </div>
 
-      {phase === 'idle' && (
+      {phase === 'idle' && allowSim && (
         <div className="mode-switch" role="group" aria-label="Origem do áudio">
           <button type="button" className={`pill-tab sm ${real ? 'active' : ''}`} onClick={() => setMode('real')}>
             Microfone real

@@ -1,6 +1,6 @@
 import React from 'react';
 import { IconCheck, IconPrint, Logo, LogoNome } from './Icons.jsx';
-import { MEDICO, PACIENTE } from '../data/mock.js';
+import { MEDICO } from '../data/mock.js';
 
 function Block({ title, children }) {
   return (
@@ -64,7 +64,7 @@ function exportTxt(draft) {
   URL.revokeObjectURL(url);
 }
 
-export default function FinalView({ draft, conflicts, alertAcked, startedAt, onRestart }) {
+export default function FinalView({ draft, patient, conflicts, alertAcked, startedAt, onRestart }) {
   const { ident, s, o, a, p } = draft;
   const cids = a.cids.filter((c) => c.status === 'Aceita');
 
@@ -100,8 +100,8 @@ export default function FinalView({ draft, conflicts, alertAcked, startedAt, onR
         <section className="sh-ident">
           <Row label="Paciente">{ident.nome}</Row>
           <Row label="Idade">{ident.idade}</Row>
-          <Row label="Sexo">{PACIENTE.sexo}</Row>
-          <Row label="Prontuário nº">{PACIENTE.id}</Row>
+          <Row label="Sexo">{patient.sexo}</Row>
+          <Row label="Prontuário nº">{patient.id}</Row>
           <Row label="Data e hora da consulta">{ident.dataHora || (startedAt ? startedAt.toLocaleString('pt-BR') : '')}</Row>
           <Row label="Médico">{MEDICO.nome} · {MEDICO.crm}</Row>
         </section>

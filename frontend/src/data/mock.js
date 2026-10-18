@@ -17,6 +17,22 @@ export const PACIENTE = {
   ultimaConsulta: '12/03/2026',
 };
 
+// Paciente demo (consulta simulada) e paciente para teste com áudio real + IA.
+export const PACIENTES = [
+  { ...PACIENTE, demo: true, rotulo: 'Consulta simulada (demonstração)' },
+  {
+    id: '00517',
+    nome: 'João Pedro Almeida',
+    iniciais: 'JA',
+    idade: 52,
+    sexo: 'Masculino',
+    convenio: 'Particular',
+    ultimaConsulta: 'Primeira consulta',
+    demo: false,
+    rotulo: 'Áudio real · transcrição e prontuário por IA',
+  },
+];
+
 // speaker: 'M' médico | 'P' paciente.  clinical:false → amenidade (filtrada pela IA, REG-03)
 // terms: expressões populares → termo médico (REG-04)
 const RAW = [

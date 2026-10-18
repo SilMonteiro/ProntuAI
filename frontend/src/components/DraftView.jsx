@@ -23,9 +23,9 @@ function AutoArea({ value, onChange, disabled, className = '' }) {
   );
 }
 
-function Field({ label, path, draft, locked, flash, onChange, onEvidence }) {
+function Field({ label, path, draft, evidence = EVIDENCE, locked, flash, onChange, onEvidence }) {
   const value = getIn(draft, path);
-  const ev = EVIDENCE[path] || [];
+  const ev = evidence[path] || [];
   return (
     <div className={`field ${flash.includes(path) ? 'flash' : ''} ${isMissing(value) ? 'missing' : ''}`}>
       <div className="field-head">
@@ -41,8 +41,8 @@ function Field({ label, path, draft, locked, flash, onChange, onEvidence }) {
   );
 }
 
-function ListEditor({ label, path, items, fields, locked, flash, onChange, onEvidence, makeItem, conflictIds = [], addLabel }) {
-  const ev = EVIDENCE[path] || [];
+function ListEditor({ label, path, items, fields, evidence = EVIDENCE, locked, flash, onChange, onEvidence, makeItem, conflictIds = [], addLabel }) {
+  const ev = evidence[path] || [];
   const update = (id, key, v) => onChange(path, items.map((it) => (it.id === id ? { ...it, [key]: v } : it)));
   return (
     <div className={`field ${flash.includes(path) ? 'flash' : ''}`}>
@@ -168,8 +168,8 @@ function CidRow({ cid, locked, flash, onDecide, onEvidence }) {
   );
 }
 
-export function SubjectiveBody({ draft, locked, flash, onChange, onEvidence }) {
-  const common = { draft, locked, flash, onChange, onEvidence };
+export function SubjectiveBody({ draft, evidence, locked, flash, onChange, onEvidence }) {
+  const common = { draft, evidence, locked, flash, onChange, onEvidence };
   return (
     <div className="acc-fields">
       <Field {...common} label="Queixa principal (QP)" path="s.qp" />
@@ -182,8 +182,8 @@ export function SubjectiveBody({ draft, locked, flash, onChange, onEvidence }) {
   );
 }
 
-export function ObjectiveBody({ draft, locked, flash, onChange, onEvidence }) {
-  const common = { draft, locked, flash, onChange, onEvidence };
+export function ObjectiveBody({ draft, evidence, locked, flash, onChange, onEvidence }) {
+  const common = { draft, evidence, locked, flash, onChange, onEvidence };
   return (
     <div className="acc-fields">
       <Field {...common} label="Sinais vitais" path="o.sinais" />
@@ -193,8 +193,8 @@ export function ObjectiveBody({ draft, locked, flash, onChange, onEvidence }) {
   );
 }
 
-export function AssessmentBody({ draft, locked, flash, onChange, onCid, onAcceptAll, onEvidence }) {
-  const common = { draft, locked, flash, onChange, onEvidence };
+export function AssessmentBody({ draft, evidence, locked, flash, onChange, onCid, onAcceptAll, onEvidence }) {
+  const common = { draft, evidence, locked, flash, onChange, onEvidence };
   const pending = draft.a.cids.filter((c) => c.status === 'Sugerida').length;
   return (
     <div className="acc-fields">
@@ -221,8 +221,8 @@ export function AssessmentBody({ draft, locked, flash, onChange, onCid, onAccept
   );
 }
 
-export function PlanBody({ draft, locked, flash, conflicts, alertAcked, onAck, onFix, onChange, onEvidence }) {
-  const common = { draft, locked, flash, onChange, onEvidence };
+export function PlanBody({ draft, evidence, locked, flash, conflicts, alertAcked, onAck, onFix, onChange, onEvidence }) {
+  const common = { draft, evidence, locked, flash, onChange, onEvidence };
   const conflictIds = conflicts.map((c) => c.rxId);
   const { p } = draft;
   return (

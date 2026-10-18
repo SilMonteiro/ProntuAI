@@ -76,3 +76,16 @@
   .done-icon { display: none !important; }
   .sh-logo img { filter: none; }
 }
+
+/* seletor de paciente no cabeçalho */
+.patient-select { position: relative; display: inline-block; }
+.patient-switch { display: inline-flex; align-items: center; gap: 10px; background: none; border: 0; padding: 2px 8px 2px 0; border-radius: 10px; color: var(--ink-deep); text-align: left; }
+.patient-switch .chev { color: var(--steel); transition: transform 0.2s; }
+.patient-switch:hover .chev { color: var(--primary); }
+.patient-switch[aria-expanded='true'] .chev { transform: rotate(-135deg) translate(-2px, -1px); }
+.patient-menu { position: absolute; top: calc(100% + 8px); left: 0; z-index: 60; min-width: 340px; list-style: none; margin: 0; padding: 6px; background: var(--canvas); border: 1px solid var(--hairline-soft); border-radius: 16px; box-shadow: rgba(20, 22, 26, 0.18) 0 12px 32px 0; }
+.patient-menu button { width: 100%; display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 0; border-radius: 12px; background: none; text-align: left; color: var(--ink); }
+.patient-menu button:hover { background: #eef5ff; }
+.patient-menu button.current { background: var(--surface-soft); }
+.pm-text { display: grid; gap: 2px; }
+.avatar.xs { width: 34px; height: 34px; font-size: 12px; }

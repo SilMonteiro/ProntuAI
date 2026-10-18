@@ -11,7 +11,8 @@ export async function askAssistant(payload) {
   } catch {
     throw new Error('Não foi possível conectar ao assistente.');
   }
-  const data = await response.json().catch(() => ({}));
+  const data = await response.json().catch(() => null);
+  if (!data) throw new Error('O assistente não respondeu pela API.');
   if (!response.ok) throw new Error(data.detail || `Assistente indisponível (HTTP ${response.status}).`);
   return data;
 }

@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { IconBell, IconCheck, Logo, LogoNome } from './Icons.jsx';
-import { MEDICO, PACIENTE } from '../data/mock.js';
+import { MEDICO } from '../data/mock.js';
 
 export function TopNav() {
   const tabs = ['Atendimento', 'Agenda', 'Pacientes', 'Histórico'];
@@ -37,16 +37,69 @@ const CONSULTA_BADGE = {
   Finalizada: ['badge-success', 'Consulta finalizada'],
 };
 
-export function PatientHeader({ consulta, dataHora }) {
+export function PatientHeader({ consulta, dataHora, patient, patients, onSelect }) {
   const [cls, label] = CONSULTA_BADGE[consulta];
+  const [open, setOpen] = useState(false);
+  const boxRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const close = (e) => {
+      if (!boxRef.current?.contains(e.target)) setOpen(false);
+    };
+    const esc = (e) => e.key === 'Escape' && setOpen(false);
+    document.addEventListener('mousedown', close);
+    document.addEventListener('keydown', esc);
+    return () => {
+      document.removeEventListener('mousedown', close);
+      document.removeEventListener('keydown', esc);
+    };
+  }, [open]);
+
   return (
     <section className="card patient">
-      <div className="avatar">{PACIENTE.iniciais}</div>
+      <div className="avatar">{patient.iniciais}</div>
       <div className="patient-main">
-        <h1 className="h-sm">{PACIENTE.nome}</h1>
+        <div className="patient-select" ref={boxRef}>
+          <button
+            type="button"
+            className="patient-switch"
+            aria-haspopup="listbox"
+            aria-expanded={open}
+            aria-label="Trocar paciente"
+            onClick={() => setOpen(!open)}
+          >
+            <h1 className="h-sm">{patient.nome}</h1>
+            <i className="chev" aria-hidden="true" />
+          </button>
+          {open && (
+            <ul className="patient-menu" role="listbox" aria-label="Pacientes">
+              {patients.map((p) => (
+                <li key={p.id}>
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={p.id === patient.id}
+                    className={p.id === patient.id ? 'current' : ''}
+                    onClick={() => {
+                      setOpen(false);
+                      if (p.id !== patient.id) onSelect(p.id);
+                    }}
+                  >
+                    <span className="avatar xs">{p.iniciais}</span>
+                    <span className="pm-text">
+                      <strong>{p.nome}</strong>
+                      <span className="muted small">{p.rotulo}</span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
         <p className="muted">
-          {PACIENTE.idade} anos · {PACIENTE.sexo} · Prontuário nº {PACIENTE.id} · {PACIENTE.convenio} · Última consulta{' '}
-          {PACIENTE.ultimaConsulta}
+          {patient.idade} anos · {patient.sexo} · Prontuário nº {patient.id} · {patient.convenio} · Última consulta{' '}
+          {patient.ultimaConsulta}
         </p>
       </div>
       <div className="patient-side">

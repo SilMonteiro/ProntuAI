@@ -21,6 +21,7 @@ from openai import AsyncOpenAI
 from pydantic import BaseModel, Field
 
 from .assistant import router as assistant_router
+from .prontuario import router as prontuario_router
 
 BASE_DIR = Path(__file__).resolve().parent
 TRANSCRIPTIONS_DIR = BASE_DIR.parent / "data" / "transcriptions"
@@ -221,3 +222,4 @@ async def create_transcription(audio: UploadFile = File(...)) -> dict:
 
 
 app.include_router(assistant_router)
+app.include_router(prontuario_router)

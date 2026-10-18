@@ -11,7 +11,8 @@ import { usePlayback } from './hooks/usePlayback.js';
 import { useMicRecorder } from './hooks/useMicRecorder.js';
 import { transcribeAudio, toSegments } from './services/api.js';
 import { askAssistant } from './services/assistant.js';
-import { buildInitialDraft, DURATION, SEGMENTS } from './data/mock.js';
+import { generateDraft } from './services/prontuario.js';
+import { buildInitialDraft, DURATION, EVIDENCE, PACIENTES, PROCESSING_STATS, SEGMENTS } from './data/mock.js';
 import { findAllergyConflicts, fmtDateTime, getIn, pendencias, setIn } from './lib/draft.js';
 import { respond } from './lib/chatEngine.js';
 
@@ -20,7 +21,27 @@ const WELCOME = {
   text: 'Rascunho pronto. Filtrei as amenidades, traduzi a linguagem popular e sugeri 3 CIDs. Encontrei **1 alerta de segurança** na prescrição. Peça os ajustes por aqui — nada vira registro final sem a sua homologação.',
 };
 
+// Mensagem inicial da assistente para um rascunho gerado pela IA.
+function welcomeFor(draft, stats) {
+  const n = draft.a.cids.length;
+  const alerts = findAllergyConflicts(draft).length;
+  return {
+    role: 'ai',
+    text:
+      `Rascunho pronto. Filtrei ${stats.filtrados} trecho${stats.filtrados === 1 ? '' : 's'} não clínico${stats.filtrados === 1 ? '' : 's'}, ` +
+      `traduzi ${stats.termos} ${stats.termos === 1 ? 'expressão popular' : 'expressões populares'} e sugeri ${n} CID${n === 1 ? '' : 's'}. ` +
+      (alerts ? `Encontrei **${alerts} alerta${alerts > 1 ? 's' : ''} de segurança** na prescrição. ` : 'Não encontrei alertas de segurança na prescrição. ') +
+      'Peça os ajustes por aqui — nada vira registro final sem a sua homologação.',
+  };
+}
+
 export default function App() {
+  const [patientId, setPatientId] = useState(PACIENTES[0].id);
+  const patient = PACIENTES.find((p) => p.id === patientId);
+  const [evidence, setEvidence] = useState(EVIDENCE);
+  const [gen, setGen] = useState({ ready: true, error: null, stats: PROCESSING_STATS });
+  const genRef = useRef(null);
+  const sessionRef = useRef(0); // invalida respostas assíncronas após reiniciar ou trocar de paciente
   const [phase, setPhase] = useState('idle'); // idle | recording | recorded | generating | review | final
   const [transcriptionStatus, setTranscriptionStatus] = useState(null); // Gravando | Processando | Concluida | Erro
   const [startedAt, setStartedAt] = useState(null);
@@ -66,13 +87,16 @@ export default function App() {
     setPhase('recorded');
     setTranscriptionStatus('Processando');
     setTranscriptError(null);
+    const sid = sessionRef.current;
     try {
       const data = await transcribeAudio(blob, filename);
+      if (sid !== sessionRef.current) return;
       const segs = toSegments(data.segments || []);
       if (!segs.length) throw new Error('Nenhuma fala foi identificada no áudio. Grave novamente mais perto do microfone.');
       setSegments(segs);
       setTranscriptionStatus('Concluida');
     } catch (err) {
+      if (sid !== sessionRef.current) return;
       setTranscriptError(err.message);
       setTranscriptionStatus('Erro');
     }
@@ -132,6 +156,7 @@ export default function App() {
   };
   const retry = () => audio && runTranscription(audio);
   const resetRecording = () => {
+    sessionRef.current += 1;
     mic.cancel();
     pb.reset();
     setPhase('idle');
@@ -142,14 +167,51 @@ export default function App() {
   const skip = () => {
     pb.seek(DURATION - 0.3);
   };
+  // Paciente demo: rascunho mockado. Demais pacientes: rascunho SOAP elaborado pela IA no backend.
+  const runGeneration = async () => {
+    genRef.current = null;
+    setGen({ ready: false, error: null, stats: null });
+    const sid = sessionRef.current;
+    try {
+      const data = await generateDraft({
+        patient: { nome: patient.nome, idade: `${patient.idade} anos`, sexo: patient.sexo },
+        data_hora: fmtDateTime(startedAt || new Date()),
+        transcript: segments.map((s) => ({ id: s.id, role: s.speaker === 'M' ? 'medico' : 'paciente', text: s.text })),
+      });
+      if (sid !== sessionRef.current) return;
+      genRef.current = { ...data, meta: new Map(data.segments.map((m) => [m.id, m])) };
+      setGen({ ready: true, error: null, stats: data.stats });
+    } catch (err) {
+      if (sid !== sessionRef.current) return;
+      setGen({ ready: false, error: err.message, stats: null });
+    }
+  };
   const generate = () => {
     pb.pause();
     audioRef.current?.pause();
     setPhase('generating');
+    if (patient.demo) {
+      genRef.current = null;
+      setGen({ ready: true, error: null, stats: PROCESSING_STATS });
+    } else {
+      runGeneration();
+    }
   };
   const onGenerated = useCallback(() => {
-    setDraft(buildInitialDraft(fmtDateTime(startedAt || new Date())));
-    setMessages([WELCOME]);
+    const g = genRef.current;
+    if (g) {
+      setDraft(g.draft);
+      setEvidence(g.evidence);
+      setSegments((segs) => segs.map((s) => {
+        const m = g.meta.get(s.id);
+        return m ? { ...s, clinical: m.clinical, terms: m.terms } : s;
+      }));
+      setMessages([welcomeFor(g.draft, g.stats)]);
+    } else {
+      setDraft(buildInitialDraft(fmtDateTime(startedAt || new Date())));
+      setEvidence(EVIDENCE);
+      setMessages([WELCOME]);
+    }
     setAssistTab('chat');
     setPhase('review');
   }, [startedAt]);
@@ -244,6 +306,10 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   const restart = () => {
+    sessionRef.current += 1;
+    genRef.current = null;
+    setEvidence(EVIDENCE);
+    setAssistOpen(false);
     window.speechSynthesis?.cancel();
     pb.reset();
     mic.cancel();
@@ -258,6 +324,16 @@ export default function App() {
     setMessages([WELCOME]);
   };
 
+  const switchPatient = (id) => {
+    restart();
+    if (audio?.url) URL.revokeObjectURL(audio.url);
+    setAudio(null);
+    setStartedAt(null);
+    setMode('real');
+    setSegments([]);
+    setPatientId(id);
+  };
+
   /* ---------- derivados de UI ---------- */
   const consulta = locked ? 'Finalizada' : phase === 'review' ? 'AguardandoRevisao' : 'EmAndamento';
   const stepIdx = locked ? 4 : phase === 'review' ? 3 : phase === 'generating' ? 2 : phase === 'recorded' ? 1 : 0;
@@ -267,7 +343,7 @@ export default function App() {
     <>
       <TopNav />
       <main className={`page ${inReview ? 'wide' : ''}`}>
-        <div className="no-print"><PatientHeader consulta={consulta} dataHora={startedAt ? fmtDateTime(startedAt) : null} /></div>
+        <div className="no-print"><PatientHeader consulta={consulta} dataHora={startedAt ? fmtDateTime(startedAt) : null} patient={patient} patients={PACIENTES} onSelect={switchPatient} /></div>
         {phase === 'final' ? (
           <div className="done-icon" role="img" aria-label="Consulta concluída">
             <IconCheck width={28} height={28} strokeWidth={3} />
@@ -279,6 +355,7 @@ export default function App() {
         {!inReview && phase !== 'generating' && phase !== 'final' && (
           <div className="grid-main">
             <Recorder
+              allowSim={patient.demo}
               mode={mode}
               setMode={(m) => {
                 setMode(m);
@@ -348,16 +425,26 @@ export default function App() {
           </div>
         )}
 
-        {phase === 'generating' && <GeneratingView onDone={onGenerated} />}
+        {phase === 'generating' && (
+          <GeneratingView
+            onDone={onGenerated}
+            ready={gen.ready}
+            error={gen.error}
+            stats={gen.stats}
+            onRetry={runGeneration}
+            onCancel={() => setPhase('recorded')}
+          />
+        )}
 
         {phase === 'final' && draft && (
-          <FinalView draft={draft} conflicts={conflicts} alertAcked={alertAcked} startedAt={startedAt} onRestart={restart} />
+          <FinalView draft={draft} patient={patient} conflicts={conflicts} alertAcked={alertAcked} startedAt={startedAt} onRestart={restart} />
         )}
 
         {inReview && (
           <>
             <ReviewFlow
               draft={draft}
+              evidence={evidence}
               locked={locked}
               flash={flash}
               conflicts={conflicts}
@@ -374,7 +461,7 @@ export default function App() {
               onChange={onChange}
               onCid={onCid}
               onAcceptAll={acceptAllCids}
-              onEvidence={mode === 'sim' ? showEvidence : undefined}
+              onEvidence={!patient.demo || mode === 'sim' ? showEvidence : undefined}
               reviewed={reviewed}
               setReviewed={setReviewed}
               pend={pend}
