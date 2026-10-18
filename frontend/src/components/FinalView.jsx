@@ -1,5 +1,5 @@
 import React from 'react';
-import { IconCheck, IconPrint } from './Icons.jsx';
+import { IconCheck, IconPrint, Logo, LogoNome } from './Icons.jsx';
 import { MEDICO, PACIENTE } from '../data/mock.js';
 
 function Block({ title, children }) {
@@ -17,6 +17,53 @@ const Row = ({ label, children }) => (
   </p>
 );
 
+// Exporta o prontuário homologado como texto simples (.txt).
+function exportTxt(draft) {
+  const { ident, s, o, a, p } = draft;
+  const cids = a.cids.filter((c) => c.status === 'Aceita').map((c) => `${c.code} - ${c.desc}`);
+  const rx = p.rx.map((r) => `${r.med} - ${r.pos}`);
+  const lines = [
+    'PRONTUÁRIO MÉDICO - EVOLUÇÃO SOAP (HOMOLOGADO)',
+    '',
+    `Paciente: ${ident.nome}`,
+    `Idade: ${ident.idade}`,
+    `Data e hora da consulta: ${ident.dataHora}`,
+    `Médico: ${MEDICO.nome} - ${MEDICO.crm}`,
+    `Homologado em: ${draft.homologadoEm}`,
+    '',
+    'S - SUBJETIVO',
+    `Queixa principal: ${s.qp}`,
+    `História da doença atual (HDA): ${s.hma}`,
+    `Histórico pregresso e comorbidades: ${s.hist}`,
+    `Alergias: ${s.alergias}`,
+    `Medicamentos em uso: ${s.meds}`,
+    `Histórico familiar e hábitos: ${s.habitos}`,
+    '',
+    'O - OBJETIVO',
+    `Sinais vitais: ${o.sinais}`,
+    `Exame físico: ${o.exame}`,
+    `Exames complementares: ${o.comp}`,
+    '',
+    'A - AVALIAÇÃO',
+    `Hipótese diagnóstica: ${a.hip}`,
+    `CID-10: ${cids.length ? cids.join('; ') : 'Nenhum CID confirmado'}`,
+    '',
+    'P - PLANO TERAPÊUTICO',
+    `Prescrição: ${rx.length ? rx.join(' | ') : 'Sem prescrição medicamentosa nesta consulta'}`,
+    `Exames solicitados: ${p.exames.length ? p.exames.map((e) => e.text).join('; ') : 'Nenhum exame solicitado'}`,
+    `Orientações e encaminhamentos: ${p.orient}`,
+    '',
+    'Prontuário elaborado com apoio de IA e revisado e aprovado pelo médico.',
+  ];
+  const blob = new Blob([lines.join(String.fromCharCode(10))], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `prontuario-${ident.nome.replace(/\s+/g, '-').toLowerCase()}.txt`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function FinalView({ draft, conflicts, alertAcked, startedAt, onRestart }) {
   const { ident, s, o, a, p } = draft;
   const cids = a.cids.filter((c) => c.status === 'Aceita');
@@ -25,13 +72,13 @@ export default function FinalView({ draft, conflicts, alertAcked, startedAt, onR
     <div className="final">
       <div className="final-toolbar no-print">
         <div className="final-ok">
-          <span className="final-check"><IconCheck width={16} height={16} strokeWidth={3} /></span>
           <div>
             <strong>Prontuário homologado</strong>
             <p className="muted small">Revisado e aprovado por {MEDICO.nome}. Registro imutável salvo no histórico do paciente.</p>
           </div>
         </div>
         <div className="final-actions">
+          <button type="button" className="btn btn-ghost" onClick={() => exportTxt(draft)}>Exportar</button>
           <button type="button" className="btn btn-secondary" onClick={onRestart}>Nova consulta</button>
           <button type="button" className="btn btn-cobalt" onClick={() => window.print()}>
             <IconPrint /> Imprimir
@@ -42,10 +89,12 @@ export default function FinalView({ draft, conflicts, alertAcked, startedAt, onR
       <article className="sheet">
         <header className="sh-head">
           <div>
-            <p className="sh-brand">ProntuAI</p>
             <h2>Prontuário médico — Evolução SOAP</h2>
           </div>
-          <span className="sh-stamp">Homologado</span>
+          <div className="sh-logo">
+            <Logo size={28} />
+            <LogoNome height={20} />
+          </div>
         </header>
 
         <section className="sh-ident">

@@ -1,5 +1,5 @@
 import React from 'react';
-import { IconBell, IconSearch, IconCheck, Logo, LogoNome } from './Icons.jsx';
+import { IconBell, IconCheck, Logo, LogoNome } from './Icons.jsx';
 import { MEDICO, PACIENTE } from '../data/mock.js';
 
 export function TopNav() {
@@ -13,16 +13,12 @@ export function TopNav() {
         </div>
         <nav className="nav-tabs" aria-label="Principal">
           {tabs.map((t, i) => (
-            <button key={t} className={`nav-tab ${i === 0 ? 'active' : ''}`} type="button" aria-current={i === 0 ? 'page' : undefined}>
+            <button key={t} className={`nav-tab ${i === 0 ? 'active' : ''}`} type="button" aria-current={i === 0 ? 'page' : undefined} disabled={i !== 0} title={i === 0 ? undefined : 'Em breve'}>
               {t}
             </button>
           ))}
         </nav>
         <div className="nav-right">
-          <div className="search-pill">
-            <IconSearch width={16} height={16} />
-            <span>Buscar paciente</span>
-          </div>
           <button className="icon-btn" type="button" aria-label="Notificações">
             <IconBell />
           </button>

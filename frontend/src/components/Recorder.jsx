@@ -42,8 +42,6 @@ export default function Recorder({
   audioUrl,
   audioRef,
   onAudioTime,
-  voiceOn,
-  setVoiceOn,
   onStart,
   onStop,
   onGenerate,
@@ -184,11 +182,6 @@ export default function Recorder({
               </button>
             ))}
           </div>
-          <label className="switch">
-            <input type="checkbox" checked={voiceOn} onChange={(e) => setVoiceOn(e.target.checked)} />
-            <span className="track" />
-            <span className="small">Narrar áudio (voz sintética)</span>
-          </label>
         </div>
       )}
     </section>

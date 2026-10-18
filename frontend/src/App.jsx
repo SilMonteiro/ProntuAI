@@ -3,9 +3,9 @@ import { TopNav, PatientHeader, Stepper } from './components/Chrome.jsx';
 import Recorder from './components/Recorder.jsx';
 import TranscriptView from './components/TranscriptView.jsx';
 import GeneratingView from './components/GeneratingView.jsx';
-import { DraftLeft, DraftCenter, SafetyAlert } from './components/DraftView.jsx';
-import ChatPanel from './components/ChatPanel.jsx';
-import { IconCheck, IconSparkle } from './components/Icons.jsx';
+import ReviewFlow from './components/ReviewFlow.jsx';
+import FloatingAssistant from './components/FloatingAssistant.jsx';
+import { IconCheck } from './components/Icons.jsx';
 import FinalView from './components/FinalView.jsx';
 import { usePlayback } from './hooks/usePlayback.js';
 import { useMicRecorder } from './hooks/useMicRecorder.js';
@@ -23,7 +23,6 @@ const WELCOME = {
 export default function App() {
   const [phase, setPhase] = useState('idle'); // idle | recording | recorded | generating | review | final
   const [transcriptionStatus, setTranscriptionStatus] = useState(null); // Gravando | Processando | Concluida | Erro
-  const [voiceOn, setVoiceOn] = useState(false);
   const [startedAt, setStartedAt] = useState(null);
   const [mode, setMode] = useState('real'); // real (microfone + backend) | sim (consulta mockada)
   const [segments, setSegments] = useState(SEGMENTS);
@@ -38,7 +37,8 @@ export default function App() {
   const [ackedKey, setAckedKey] = useState(null);
   const [reviewed, setReviewed] = useState(false);
 
-  const [rightTab, setRightTab] = useState('chat');
+  const [assistTab, setAssistTab] = useState('chat');
+  const [assistOpen, setAssistOpen] = useState(false);
   const [highlight, setHighlight] = useState([]);
   const [messages, setMessages] = useState([WELCOME]);
   const [typing, setTyping] = useState(false);
@@ -55,20 +55,6 @@ export default function App() {
   const pb = usePlayback(DURATION, () => {
     if (phase === 'recording' && mode === 'sim') finishRecording();
   });
-
-  /* ---------- áudio / voz sintética ---------- */
-  const active = useMemo(() => [...SEGMENTS].reverse().find((s) => s.start <= pb.pos), [pb.pos]);
-  useEffect(() => {
-    if (!('speechSynthesis' in window)) return undefined;
-    window.speechSynthesis.cancel();
-    if (!pb.playing || !voiceOn || !active) return undefined;
-    const u = new SpeechSynthesisUtterance(active.text);
-    u.lang = 'pt-BR';
-    u.rate = Math.min(1.6, 0.95 + pb.speed * 0.15);
-    u.pitch = active.speaker === 'M' ? 0.9 : 1.25;
-    window.speechSynthesis.speak(u);
-    return () => window.speechSynthesis.cancel();
-  }, [active?.id, pb.playing, voiceOn]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const notify = (text) => {
     setToast(text);
@@ -164,7 +150,7 @@ export default function App() {
   const onGenerated = useCallback(() => {
     setDraft(buildInitialDraft(fmtDateTime(startedAt || new Date())));
     setMessages([WELCOME]);
-    setRightTab('chat');
+    setAssistTab('chat');
     setPhase('review');
   }, [startedAt]);
 
@@ -192,7 +178,8 @@ export default function App() {
 
   const showEvidence = (ids) => {
     setHighlight(ids);
-    setRightTab('transcript');
+    setAssistTab('transcript');
+    setAssistOpen(true);
   };
 
   // Aplica só as seções que o assistente mudou, sobre o estado atual (o médico pode ter editado durante a espera).
@@ -281,9 +268,15 @@ export default function App() {
       <TopNav />
       <main className={`page ${inReview ? 'wide' : ''}`}>
         <div className="no-print"><PatientHeader consulta={consulta} dataHora={startedAt ? fmtDateTime(startedAt) : null} /></div>
-        <div className="no-print"><Stepper current={stepIdx} /></div>
+        {phase === 'final' ? (
+          <div className="done-icon" role="img" aria-label="Consulta concluída">
+            <IconCheck width={28} height={28} strokeWidth={3} />
+          </div>
+        ) : (
+          <div className="no-print"><Stepper current={stepIdx} /></div>
+        )}
 
-        {!inReview && phase !== 'generating' && (
+        {!inReview && phase !== 'generating' && phase !== 'final' && (
           <div className="grid-main">
             <Recorder
               mode={mode}
@@ -301,8 +294,6 @@ export default function App() {
               onRetry={retry}
               onReset={resetRecording}
               error={transcriptError}
-              voiceOn={voiceOn}
-              setVoiceOn={setVoiceOn}
               onStart={start}
               onStop={stop}
               onSkip={skip}
@@ -365,99 +356,63 @@ export default function App() {
 
         {inReview && (
           <>
-            <div className="status-track" aria-label="Estado do prontuário">
-              {['Rascunho', 'EmRevisao', 'Homologado'].map((s, i, arr) => {
-                const idx = arr.indexOf(draft.status);
-                return (
-                  <React.Fragment key={s}>
-                    <span className={`st ${i < idx ? 'done' : i === idx ? 'cur' : ''}`}>{s === 'EmRevisao' ? 'Em revisão' : s}</span>
-                    {i < arr.length - 1 && <i className="st-line" />}
-                  </React.Fragment>
-                );
-              })}
-            </div>
-
-            <div className="grid-review">
-              <DraftLeft
-                draft={draft}
-                locked={locked}
-                flash={flash}
-                conflictIds={conflicts.map((c) => c.rxId)}
-                onChange={onChange}
-                onEvidence={mode === 'sim' ? showEvidence : undefined}
-              />
-              <DraftCenter
-                draft={draft}
-                locked={locked}
-                flash={flash}
-                onChange={onChange}
-                onCid={onCid}
-                onAcceptAll={acceptAllCids}
-                onEvidence={mode === 'sim' ? showEvidence : undefined}
-              />
-
-              <aside className="side">
-                <div className="side-inner card">
-                  <div className="side-tabs">
-                    <button type="button" className={`pill-tab ${rightTab === 'chat' ? 'active' : ''}`} onClick={() => setRightTab('chat')}>
-                      <IconSparkle width={14} height={14} /> Assistente IA
-                    </button>
-                    <button type="button" className={`pill-tab ${rightTab === 'transcript' ? 'active' : ''}`} onClick={() => setRightTab('transcript')}>
-                      Transcrição
-                    </button>
-                  </div>
-                  {rightTab === 'chat' ? (
-                    <ChatPanel
-                      messages={messages}
-                      typing={typing}
-                      locked={locked}
-                      onSend={send}
-                      prefill={prefill}
-                      onPrefillUsed={() => setPrefill('')}
-                    />
-                  ) : (
-                    <div className="side-transcript">
-                      <p className="muted small legend">
-                        <mark className="term">termo popular</mark> → termo médico · trechos esmaecidos foram filtrados da nota.
-                      </p>
-                      <TranscriptView mode="review" highlight={highlight} segments={segments} />
-                    </div>
-                  )}
-                </div>
-                <div className="actionbar card">
-                  <label className="check">
-                    <input type="checkbox" checked={reviewed} onChange={(e) => setReviewed(e.target.checked)} />
-                    <span>Revisei o conteúdo gerado pela IA e assumo a responsabilidade clínica.</span>
-                  </label>
-                  <p className="pend small">
-                    {pend.length ? `Pendências: ${pend.join(' · ')}` : <><IconCheck width={14} height={14} /> Pronto para elaborar o prontuário</>}
-                  </p>
-                  <div className="actionbar-right">
-                    <button type="button" className="btn btn-ghost" onClick={saveDraft}>
-                      Salvar rascunho
-                    </button>
-                    <button type="button" className="btn btn-cobalt" disabled={pend.length > 0} onClick={elaborar}>
-                      Elaborar prontuário
-                    </button>
-                  </div>
-                </div>
-              </aside>
-            </div>
-
-            <SafetyAlert
-              conflicts={conflicts}
-              acked={alertAcked}
+            <ReviewFlow
+              draft={draft}
               locked={locked}
+              flash={flash}
+              conflicts={conflicts}
+              alertAcked={alertAcked}
               onAck={() => {
                 setAckedKey(conflictKey);
                 setDraft(touch);
               }}
-              onFix={(drug) => {
-                setRightTab('chat');
+              onFixAlert={(drug) => {
+                setAssistTab('chat');
+                setAssistOpen(true);
                 setPrefill(`Substitua a ${drug} por paracetamol 750 mg`);
               }}
+              onChange={onChange}
+              onCid={onCid}
+              onAcceptAll={acceptAllCids}
+              onEvidence={mode === 'sim' ? showEvidence : undefined}
+              reviewed={reviewed}
+              setReviewed={setReviewed}
+              pend={pend}
             />
 
+            <FloatingAssistant
+              open={assistOpen}
+              setOpen={setAssistOpen}
+              tab={assistTab}
+              setTab={setAssistTab}
+              messages={messages}
+              typing={typing}
+              locked={locked}
+              onSend={send}
+              prefill={prefill}
+              onPrefillUsed={() => setPrefill('')}
+              segments={segments}
+              highlight={highlight}
+            />
+
+            {!locked && (
+              <section className="finish-zone" aria-label="Finalizar revisão">
+                <div className="finish-text">
+                  <strong>Finalizar revisão</strong>
+                  <p className="pend small">
+                    {pend.length ? `Pendências: ${pend.join(' · ')}` : <><IconCheck width={14} height={14} /> Pronto para elaborar o prontuário</>}
+                  </p>
+                </div>
+                <div className="actionbar-right">
+                  <button type="button" className="btn btn-ghost" onClick={saveDraft}>
+                    Salvar rascunho
+                  </button>
+                  <button type="button" className="btn btn-cobalt" disabled={pend.length > 0} onClick={elaborar}>
+                    Elaborar prontuário
+                  </button>
+                </div>
+              </section>
+            )}
           </>
         )}
       </main>

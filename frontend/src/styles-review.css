@@ -1,0 +1,78 @@
+/* ---------- revisão em subetapas recolhíveis ---------- */
+.page.wide { padding-bottom: 48px; }
+.review-wrap { width: 100%; max-width: 1040px; margin: 0 auto; }
+.acc { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.acc-item { background: var(--canvas); border: 1px solid var(--hairline-soft); border-radius: 20px; overflow: hidden; transition: border-color 0.2s, box-shadow 0.2s; }
+.acc-item.open { border-color: var(--primary); box-shadow: rgba(0, 100, 224, 0.1) 0 6px 20px 0; }
+.acc-head { width: 100%; display: flex; align-items: center; gap: 14px; padding: 16px 20px; background: none; border: 0; text-align: left; }
+.acc-head:hover { background: #f7f9fc; }
+.acc-num { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 14px; background: var(--surface-soft); color: var(--charcoal); flex: none; }
+.acc-item.open .acc-num { background: var(--primary); color: #fff; }
+.acc-title { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.acc-title strong { font-size: 16px; color: var(--ink-deep); }
+.acc-body { padding: 4px 22px 20px 68px; display: flex; flex-direction: column; gap: 16px; }
+.acc-fields { display: flex; flex-direction: column; gap: 16px; }
+.acc-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding-top: 14px; border-top: 1px solid var(--hairline-soft); flex-wrap: wrap; }
+.checklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.checklist li { display: flex; gap: 10px; align-items: center; font-size: 14px; color: var(--steel); }
+.checklist li.ok { color: var(--ink); }
+.ci-mark { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--hairline); display: grid; place-items: center; flex: none; color: #fff; }
+.checklist li.ok .ci-mark { background: var(--success); border-color: var(--success); }
+
+/* bloco de finalização, ao fim das etapas */
+.finish-zone { max-width: 1040px; margin: 8px auto 0; display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; padding: 22px 26px; background: var(--canvas); border: 1px dashed var(--hairline); border-radius: 20px; }
+.finish-text { display: grid; gap: 4px; min-width: 0; }
+.finish-text strong { font-size: 16px; color: var(--ink-deep); }
+.finish-text .pend { max-width: none; text-align: left; margin: 0; }
+.finish-zone .actionbar-right { flex-wrap: nowrap; }
+
+/* assistente flutuante */
+.assist-fab { position: fixed; right: 24px; bottom: 88px; z-index: 50; width: 58px; height: 58px; border-radius: 50%; border: 0; background: var(--primary); color: #fff; display: grid; place-items: center; box-shadow: rgba(0, 100, 224, 0.35) 0 8px 24px 0; transition: transform 0.15s, background 0.2s; }
+.assist-fab:hover { transform: scale(1.05); background: var(--primary-deep); }
+.assist-fab:active { transform: scale(0.97); }
+.assist-badge { position: absolute; top: -2px; right: -2px; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 100px; background: var(--critical); color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center; border: 2px solid #fff; }
+.assist-panel { position: fixed; right: 24px; bottom: 160px; z-index: 55; width: 400px; max-width: calc(100vw - 32px); height: min(540px, calc(100vh - 200px)); display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 24px; box-shadow: rgba(20, 22, 26, 0.25) 0 12px 40px 0; }
+.assist-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.assist-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.assist-body .chat { flex: 1; min-height: 0; }
+.assist-body .side-transcript { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+.assist-body .transcript { height: auto; flex: 1; min-height: 0; }
+
+@media (max-width: 767px) {
+  .acc-body { padding-left: 20px; }
+  .acc-head { padding: 14px 16px; }
+  .acc-head .expand { display: none; }
+  .finish-zone { padding: 18px; }
+  .assist-fab { bottom: 104px; right: 16px; }
+  .assist-panel { right: 16px; bottom: 176px; }
+}
+
+/* revisão: destaque por seção revisada, setas de navegação */
+.acc-item.seen .acc-head { background: #f0f6ff; }
+.acc-item.seen .acc-num { background: var(--primary-tint); color: var(--primary-deep); }
+.seen-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: var(--primary-deep); background: var(--primary-tint); border-radius: 100px; padding: 3px 10px; white-space: nowrap; }
+.arrow-btn { width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--hairline); background: var(--canvas); color: var(--charcoal); display: grid; place-items: center; transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.1s; }
+.arrow-btn:hover { background: #eef5ff; border-color: var(--primary); color: var(--primary); }
+.arrow-btn:active { transform: scale(0.95); }
+
+/* CIDs: "Aceitar todos" compacto e verde; ações individuais mais discretas */
+.field-actions .btn-outline-ok { padding: 5px 12px; font-size: 12px; font-weight: 700; background: #eef8f1; border-color: var(--success); color: var(--success); }
+.field-actions .btn-outline-ok:hover { background: #dff3e6; }
+.cid-actions .btn-outline-ok { padding: 6px 12px; font-size: 12px; font-weight: 600; background: transparent; border-color: #c4e5cd; color: #5b9f6e; }
+.cid-actions .btn-outline-ok:hover { border-color: var(--success); color: var(--success); }
+.cid-actions .btn-outline-no { padding: 6px 12px; font-size: 12px; font-weight: 600; background: transparent; border-color: var(--hairline-soft); color: var(--stone); }
+.cid-actions .btn-outline-no:hover { border-color: var(--hairline); color: var(--steel); }
+
+/* navegação: abas indisponíveis em tom mais claro */
+.nav-tab:disabled { color: #aab3bd; cursor: default; }
+.nav-tab:disabled:hover { color: #aab3bd; }
+
+/* versão final: ícone de conclusão no lugar da trilha de etapas */
+.done-icon { width: 56px; height: 56px; margin: 4px auto 0; border-radius: 50%; background: var(--success); color: #fff; display: grid; place-items: center; box-shadow: rgba(49, 162, 76, 0.3) 0 8px 24px 0; }
+
+/* impressão: só a folha, sem ícone de conclusão nem marca azul */
+.sh-logo { display: flex; align-items: center; gap: 8px; flex: none; }
+@media print {
+  .done-icon { display: none !important; }
+  .sh-logo img { filter: none; }
+}
