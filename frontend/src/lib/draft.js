@@ -39,7 +39,6 @@ export function findAllergyConflicts(draft) {
 
 export function pendencias(draft, { alertOk, reviewed }) {
   const out = [];
-  if (draft.status === 'Rascunho') out.push('iniciar a revisão do rascunho');
   const open = draft.a.cids.filter((c) => c.status === 'Sugerida').length;
   if (open) out.push(`decidir ${open} CID-10 sugerido${open > 1 ? 's' : ''}`);
   if (!alertOk) out.push('tratar o alerta de segurança');

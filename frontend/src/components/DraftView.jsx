@@ -196,7 +196,7 @@ function Sum({ label, children }) {
 
 export function DraftLeft({ draft, locked, flash, conflictIds = [], onChange, onEvidence }) {
   const common = { draft, locked, flash, onChange, onEvidence };
-  const { s, o, p, ident } = draft;
+  const { s, o, p } = draft;
   return (
     <div className="draft">
       <Section letter="S" title="Subjetivo" subtitle="Relato do paciente e anamnese" prefix="s." flash={flash} defaultOpen
@@ -253,24 +253,6 @@ export function DraftLeft({ draft, locked, flash, conflictIds = [], onChange, on
           addLabel="Adicionar exame"
         />
         <Field {...common} label="Orientações e encaminhamentos" path="p.orient" />
-      </Section>
-
-      <Section letter="ID" title="Identificação" subtitle="Dados do paciente e da consulta" prefix="ident." flash={flash}
-        summary={<Sum label="Paciente">{ident.nome} · {ident.idade} · {ident.dataHora}</Sum>}>
-        <div className="grid-2">
-          <div className="field">
-            <div className="field-head"><label>Nome</label></div>
-            <input className="input" value={ident.nome} disabled={locked} onChange={(e) => onChange('ident.nome', e.target.value)} />
-          </div>
-          <div className="field">
-            <div className="field-head"><label>Idade</label></div>
-            <input className="input" value={ident.idade} disabled={locked} onChange={(e) => onChange('ident.idade', e.target.value)} />
-          </div>
-        </div>
-        <div className="field">
-          <div className="field-head"><label>Data e hora da consulta</label></div>
-          <input className="input" value={ident.dataHora} disabled />
-        </div>
       </Section>
     </div>
   );

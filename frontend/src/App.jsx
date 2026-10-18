@@ -5,9 +5,10 @@ import TranscriptView from './components/TranscriptView.jsx';
 import GeneratingView from './components/GeneratingView.jsx';
 import { DraftLeft, DraftCenter, SafetyAlert } from './components/DraftView.jsx';
 import ChatPanel from './components/ChatPanel.jsx';
-import { IconCheck, IconLock, IconPrint, IconSparkle } from './components/Icons.jsx';
+import { IconCheck, IconSparkle } from './components/Icons.jsx';
+import FinalView from './components/FinalView.jsx';
 import { usePlayback } from './hooks/usePlayback.js';
-import { buildInitialDraft, DURATION, MEDICO, SEGMENTS } from './data/mock.js';
+import { buildInitialDraft, DURATION, SEGMENTS } from './data/mock.js';
 import { findAllergyConflicts, fmtDateTime, pendencias, setIn } from './lib/draft.js';
 import { respond } from './lib/chatEngine.js';
 
@@ -17,7 +18,7 @@ const WELCOME = {
 };
 
 export default function App() {
-  const [phase, setPhase] = useState('idle'); // idle | recording | recorded | generating | review
+  const [phase, setPhase] = useState('idle'); // idle | recording | recorded | generating | review | final
   const [transcriptionStatus, setTranscriptionStatus] = useState(null); // Gravando | Processando | Concluida
   const [voiceOn, setVoiceOn] = useState(false);
   const [startedAt, setStartedAt] = useState(null);
@@ -133,11 +134,18 @@ export default function App() {
 
   /* ---------- homologação (FL-04) ---------- */
   const pend = draft ? pendencias(draft, { alertOk, reviewed }) : [];
-  const homologar = () => {
+  const saveDraft = () => {
+    try {
+      localStorage.setItem('prontuai:rascunho', JSON.stringify(draft));
+    } catch (e) {
+      /* armazenamento indisponível: mantém em memória */
+    }
+    notify('Rascunho salvo — o prontuário ainda não foi elaborado');
+  };
+  const elaborar = () => {
     window.speechSynthesis?.cancel();
     setDraft((d) => ({ ...d, status: 'Homologado', homologadoEm: fmtDateTime(new Date()), assinatura: Math.random().toString(16).slice(2, 10).toUpperCase() }));
-    setRightTab('transcript');
-    setHighlight([]);
+    setPhase('final');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   const restart = () => {
@@ -161,8 +169,8 @@ export default function App() {
     <>
       <TopNav />
       <main className={`page ${inReview ? 'wide' : ''}`}>
-        <PatientHeader consulta={consulta} dataHora={startedAt ? fmtDateTime(startedAt) : null} />
-        <Stepper current={stepIdx} />
+        <div className="no-print"><PatientHeader consulta={consulta} dataHora={startedAt ? fmtDateTime(startedAt) : null} /></div>
+        <div className="no-print"><Stepper current={stepIdx} /></div>
 
         {!inReview && phase !== 'generating' && (
           <div className="grid-main">
@@ -200,28 +208,12 @@ export default function App() {
 
         {phase === 'generating' && <GeneratingView onDone={onGenerated} />}
 
+        {phase === 'final' && draft && (
+          <FinalView draft={draft} conflicts={conflicts} alertAcked={alertAcked} startedAt={startedAt} onRestart={restart} />
+        )}
+
         {inReview && (
           <>
-            {locked && (
-              <div className="banner-ok">
-                <IconLock />
-                <div>
-                  <strong>Prontuário homologado</strong>
-                  <p className="small">
-                    {MEDICO.nome} · {MEDICO.crm} · {draft.homologadoEm} · assinatura #{draft.assinatura}. Registro imutável salvo no histórico do paciente; áudio bruto descartado.
-                  </p>
-                </div>
-                <div className="banner-actions">
-                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => window.print()}>
-                    <IconPrint /> Exportar
-                  </button>
-                  <button type="button" className="btn btn-black btn-sm" onClick={restart}>
-                    Nova consulta
-                  </button>
-                </div>
-              </div>
-            )}
-
             <div className="status-track" aria-label="Estado do prontuário">
               {['Rascunho', 'EmRevisao', 'Homologado'].map((s, i, arr) => {
                 const idx = arr.indexOf(draft.status);
@@ -280,6 +272,23 @@ export default function App() {
                     </div>
                   )}
                 </div>
+                <div className="actionbar card">
+                  <label className="check">
+                    <input type="checkbox" checked={reviewed} onChange={(e) => setReviewed(e.target.checked)} />
+                    <span>Revisei o conteúdo gerado pela IA e assumo a responsabilidade clínica.</span>
+                  </label>
+                  <p className="pend small">
+                    {pend.length ? `Pendências: ${pend.join(' · ')}` : <><IconCheck width={14} height={14} /> Pronto para elaborar o prontuário</>}
+                  </p>
+                  <div className="actionbar-right">
+                    <button type="button" className="btn btn-ghost" onClick={saveDraft}>
+                      Salvar rascunho
+                    </button>
+                    <button type="button" className="btn btn-cobalt" disabled={pend.length > 0} onClick={elaborar}>
+                      Elaborar prontuário
+                    </button>
+                  </div>
+                </div>
               </aside>
             </div>
 
@@ -297,30 +306,6 @@ export default function App() {
               }}
             />
 
-            {!locked && (
-              <div className="actionbar">
-                <label className="check">
-                  <input type="checkbox" checked={reviewed} onChange={(e) => setReviewed(e.target.checked)} />
-                  <span>Revisei todo o conteúdo gerado pela IA e assumo a responsabilidade clínica pelo registro.</span>
-                </label>
-                <div className="actionbar-right">
-                  <span className="pend small">
-                    {pend.length ? `Pendências: ${pend.join(' · ')}` : <><IconCheck width={14} height={14} /> Pronto para homologar</>}
-                  </span>
-                  <button type="button" className="btn btn-ghost" onClick={() => notify('Rascunho salvo no histórico da consulta')}>
-                    Salvar rascunho
-                  </button>
-                  {draft.status === 'Rascunho' && (
-                    <button type="button" className="btn btn-secondary" onClick={() => setDraft(touch)}>
-                      Iniciar revisão
-                    </button>
-                  )}
-                  <button type="button" className="btn btn-cobalt" disabled={pend.length > 0} onClick={homologar}>
-                    Homologar prontuário
-                  </button>
-                </div>
-              </div>
-            )}
           </>
         )}
       </main>
