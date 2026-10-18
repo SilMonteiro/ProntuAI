@@ -1,3 +1,5 @@
+import logoIcon from '../assets/logo-icon.png';
+import logoNome from '../assets/logo-nome.png';
 import React from 'react';
 
 const base = { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true };
@@ -24,9 +26,10 @@ export const IconPrint = I(<><path d="M7 9V3h10v6" /><rect x="4" y="9" width="16
 export const IconPlus = I(<path d="M12 5v14M5 12h14" />);
 export const IconFilter = I(<path d="M3 5h18l-7 8v6l-4-2v-4z" />);
 
-export const Logo = ({ size = 32 }) => (
-  <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
-    <rect width="32" height="32" rx="10" fill="#0064e0" />
-    <path d="M5 17h5l2.5-6 4 11 3-8 1.5 3H27" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
+export const Logo = ({ size = 36 }) => (
+  <img src={logoIcon} width={size} height={size} alt="" aria-hidden="true" />
+);
+
+export const LogoNome = ({ height = 20 }) => (
+  <img src={logoNome} height={height} alt="ProntuAI" />
 );

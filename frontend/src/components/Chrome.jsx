@@ -1,5 +1,5 @@
 import React from 'react';
-import { IconBell, IconSearch, IconCheck, Logo } from './Icons.jsx';
+import { IconBell, IconSearch, IconCheck, Logo, LogoNome } from './Icons.jsx';
 import { MEDICO, PACIENTE } from '../data/mock.js';
 
 export function TopNav() {
@@ -9,7 +9,7 @@ export function TopNav() {
       <div className="nav-inner">
         <div className="brand">
           <Logo />
-          <span>ProntuAI</span>
+          <LogoNome />
         </div>
         <nav className="nav-tabs" aria-label="Principal">
           {tabs.map((t, i) => (
