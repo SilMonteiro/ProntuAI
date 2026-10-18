@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { IconCheck } from './Icons.jsx';
 
+// Duração de cada etapa da animação (ms): 6 etapas, cerca de 2 s a mais que antes.
+const STEP_MS = 1080;
+
 function buildSteps(stats) {
   return [
     { label: 'Separando falas por locutor', detail: 'Médico e paciente' },
@@ -24,7 +27,7 @@ export default function GeneratingView({ onDone, ready = true, error, stats, onR
       return () => clearTimeout(id);
     }
     if (n === steps.length - 1 && !ready) return undefined;
-    const id = setTimeout(() => setN((x) => x + 1), 750);
+    const id = setTimeout(() => setN((x) => x + 1), STEP_MS);
     return () => clearTimeout(id);
   }, [n, onDone, ready, error, steps.length]);
 
