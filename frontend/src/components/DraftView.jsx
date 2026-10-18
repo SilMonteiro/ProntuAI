@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useRef } from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import { EVIDENCE } from '../data/mock.js';
 import { getIn, isMissing } from '../lib/draft.js';
 import { IconAlert, IconCheck, IconLink, IconLock, IconPlus, IconX } from './Icons.jsx';
@@ -41,17 +41,20 @@ function Field({ label, path, draft, locked, flash, onChange, onEvidence }) {
   );
 }
 
-function Section({ letter, title, subtitle, children }) {
+function Section({ letter, title, subtitle, summary, prefix, flash = [], defaultOpen = false, children }) {
+  const [open, setOpen] = useState(defaultOpen);
+  const flashing = prefix && flash.some((f) => f.startsWith(prefix));
   return (
-    <section className="card soap">
-      <header className="soap-head">
+    <section className={`card soap ${open ? 'open' : ''} ${flashing ? 'sec-flash' : ''}`}>
+      <button type="button" className="soap-head" aria-expanded={open} onClick={() => setOpen(!open)}>
         <span className="soap-letter">{letter}</span>
-        <div>
+        <div className="soap-title">
           <h3 className="h-sm">{title}</h3>
           <p className="muted small">{subtitle}</p>
         </div>
-      </header>
-      <div className="soap-body">{children}</div>
+        <span className="expand">{open ? 'Recolher' : 'Expandir'}<i className="chev" /></span>
+      </button>
+      {open ? <div className="soap-body">{children}</div> : <div className="soap-summary">{summary}</div>}
     </section>
   );
 }
@@ -181,69 +184,57 @@ function CidRow({ cid, locked, flash, onDecide, onEvidence }) {
   );
 }
 
-export default function DraftView({ draft, locked, flash, conflicts, ackedAlert, onAck, onFixAlert, onChange, onCid, onEvidence }) {
-  const common = { draft, locked, flash, onChange, onEvidence };
-  const conflictIds = conflicts.map((c) => c.rxId);
+const clip = (s, n = 140) => (s.length > n ? `${s.slice(0, n).trim()}…` : s);
 
+function Sum({ label, children }) {
+  return (
+    <p className="sum">
+      <b>{label}</b> <span>{children}</span>
+    </p>
+  );
+}
+
+export function DraftLeft({ draft, locked, flash, conflictIds = [], onChange, onEvidence }) {
+  const common = { draft, locked, flash, onChange, onEvidence };
+  const { s, o, p, ident } = draft;
   return (
     <div className="draft">
-      <SafetyAlert conflicts={conflicts} acked={ackedAlert} onAck={onAck} onFix={onFixAlert} locked={locked} />
-
-      <Section letter="ID" title="Identificação do paciente" subtitle="Dados do sistema e da transcrição">
-        <div className="grid-3">
-          <div className="field">
-            <div className="field-head"><label>Nome</label></div>
-            <input className="input" value={draft.ident.nome} disabled={locked} onChange={(e) => onChange('ident.nome', e.target.value)} />
-          </div>
-          <div className="field">
-            <div className="field-head"><label>Idade</label></div>
-            <input className="input" value={draft.ident.idade} disabled={locked} onChange={(e) => onChange('ident.idade', e.target.value)} />
-          </div>
-          <div className="field">
-            <div className="field-head"><label>Data e hora da consulta</label></div>
-            <input className="input" value={draft.ident.dataHora} disabled />
-          </div>
-        </div>
-      </Section>
-
-      <Section letter="S" title="Subjetivo" subtitle="Relato do paciente e anamnese">
+      <Section letter="S" title="Subjetivo" subtitle="Relato do paciente e anamnese" prefix="s." flash={flash} defaultOpen
+        summary={<>
+          <Sum label="QP">{s.qp}</Sum>
+          <Sum label="HMA">{clip(s.hma, 170)}</Sum>
+          <Sum label="Alergias">{s.alergias}</Sum>
+          <Sum label="Em uso">{clip(s.meds, 90)}</Sum>
+        </>}>
         <Field {...common} label="Queixa principal (QP)" path="s.qp" />
         <Field {...common} label="História da moléstia atual (HMA)" path="s.hma" />
         <Field {...common} label="Histórico médico pregresso e comorbidades" path="s.hist" />
-        <div className="grid-2">
-          <Field {...common} label="Alergias" path="s.alergias" />
-          <Field {...common} label="Medicamentos em uso contínuo" path="s.meds" />
-        </div>
+        <Field {...common} label="Alergias" path="s.alergias" />
+        <Field {...common} label="Medicamentos em uso contínuo" path="s.meds" />
         <Field {...common} label="Histórico familiar e hábitos de vida" path="s.habitos" />
       </Section>
 
-      <Section letter="O" title="Objetivo" subtitle="Exame físico e achados clínicos ditados pelo médico">
+      <Section letter="O" title="Objetivo" subtitle="Exame físico e achados clínicos" prefix="o." flash={flash}
+        summary={<>
+          <Sum label="Sinais vitais">{clip(o.sinais, 110)}</Sum>
+          <Sum label="Exame físico">{clip(o.exame, 110)}</Sum>
+        </>}>
         <Field {...common} label="Sinais vitais" path="o.sinais" />
         <Field {...common} label="Exame físico segmentar" path="o.exame" />
         <Field {...common} label="Exames complementares analisados" path="o.comp" />
       </Section>
 
-      <Section letter="A" title="Avaliação" subtitle="Impressão diagnóstica e mapeamento CID-10">
-        <Field {...common} label="Hipótese diagnóstica" path="a.hip" />
-        <div className={`field ${flash.includes('a.cids') ? 'flash' : ''}`}>
-          <div className="field-head">
-            <label>Sugestões de CID-10</label>
-            <span className="muted small">Aceite ou rejeite cada sugestão (REG-05)</span>
-          </div>
-          <ul className="cids">
-            {draft.a.cids.map((c) => (
-              <CidRow key={c.id} cid={c} locked={locked} flash={false} onDecide={onCid} onEvidence={onEvidence} />
-            ))}
-          </ul>
-        </div>
-      </Section>
-
-      <Section letter="P" title="Plano terapêutico" subtitle="Conduta, prescrição e orientações">
+      <Section letter="P" title="Plano terapêutico" subtitle="Conduta, prescrição e orientações" prefix="p." flash={flash}
+        summary={<>
+          <Sum label="Prescrição">{p.rx.length ? p.rx.map((r) => r.med).join(' · ') : 'Sem prescrição medicamentosa nesta consulta'}</Sum>
+          <Sum label="Exames">{p.exames.length ? p.exames.map((e) => e.text).join(' · ') : 'Nenhum exame solicitado'}</Sum>
+          <Sum label="Orientações">{clip(p.orient, 110)}</Sum>
+        </>}>
         <ListEditor
           {...common}
           label="Prescrição de medicamentos"
           path="p.rx"
-          items={draft.p.rx}
+          items={p.rx}
           conflictIds={conflictIds}
           fields={[
             { key: 'med', placeholder: 'Medicamento e dose', strong: true },
@@ -256,7 +247,7 @@ export default function DraftView({ draft, locked, flash, conflicts, ackedAlert,
           {...common}
           label="Exames solicitados"
           path="p.exames"
-          items={draft.p.exames}
+          items={p.exames}
           fields={[{ key: 'text', placeholder: 'Exame solicitado', strong: true }]}
           makeItem={() => ({ id: `ex${Date.now()}`, text: '' })}
           addLabel="Adicionar exame"
@@ -264,11 +255,54 @@ export default function DraftView({ draft, locked, flash, conflicts, ackedAlert,
         <Field {...common} label="Orientações e encaminhamentos" path="p.orient" />
       </Section>
 
-      {locked && (
-        <p className="muted small lock-note">
-          <IconLock width={14} height={14} /> Registro imutável para auditoria.
-        </p>
-      )}
+      <Section letter="ID" title="Identificação" subtitle="Dados do paciente e da consulta" prefix="ident." flash={flash}
+        summary={<Sum label="Paciente">{ident.nome} · {ident.idade} · {ident.dataHora}</Sum>}>
+        <div className="grid-2">
+          <div className="field">
+            <div className="field-head"><label>Nome</label></div>
+            <input className="input" value={ident.nome} disabled={locked} onChange={(e) => onChange('ident.nome', e.target.value)} />
+          </div>
+          <div className="field">
+            <div className="field-head"><label>Idade</label></div>
+            <input className="input" value={ident.idade} disabled={locked} onChange={(e) => onChange('ident.idade', e.target.value)} />
+          </div>
+        </div>
+        <div className="field">
+          <div className="field-head"><label>Data e hora da consulta</label></div>
+          <input className="input" value={ident.dataHora} disabled />
+        </div>
+      </Section>
     </div>
+  );
+}
+
+export function DraftCenter({ draft, locked, flash, onChange, onCid, onEvidence }) {
+  const common = { draft, locked, flash, onChange, onEvidence };
+  const pending = draft.a.cids.filter((c) => c.status === 'Sugerida').length;
+  return (
+    <section className="card soap emph">
+      <header className="soap-head static">
+        <span className="soap-letter">A</span>
+        <div className="soap-title">
+          <h3 className="h-sm">Avaliação</h3>
+          <p className="muted small">Impressão diagnóstica e CID-10</p>
+        </div>
+        {!locked && pending > 0 && <span className="badge badge-attention">{pending} CID pendente{pending > 1 ? 's' : ''}</span>}
+      </header>
+      <div className="soap-body">
+        <Field {...common} label="Hipótese diagnóstica" path="a.hip" />
+        <div className={`field ${flash.includes('a.cids') ? 'flash' : ''}`}>
+          <div className="field-head">
+            <label>Sugestões de CID-10</label>
+            <span className="muted small">Aceite ou rejeite cada sugestão (REG-05)</span>
+          </div>
+          <ul className="cids">
+            {draft.a.cids.map((c) => (
+              <CidRow key={c.id} cid={c} locked={locked} flash={false} onDecide={onCid} onEvidence={onEvidence} />
+            ))}
+          </ul>
+        </div>
+      </div>
+    </section>
   );
 }

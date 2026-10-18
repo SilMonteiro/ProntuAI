@@ -3,7 +3,7 @@ import { TopNav, PatientHeader, Stepper } from './components/Chrome.jsx';
 import Recorder from './components/Recorder.jsx';
 import TranscriptView from './components/TranscriptView.jsx';
 import GeneratingView from './components/GeneratingView.jsx';
-import DraftView from './components/DraftView.jsx';
+import { DraftLeft, DraftCenter, SafetyAlert } from './components/DraftView.jsx';
 import ChatPanel from './components/ChatPanel.jsx';
 import { IconCheck, IconLock, IconPrint, IconSparkle } from './components/Icons.jsx';
 import { usePlayback } from './hooks/usePlayback.js';
@@ -160,7 +160,7 @@ export default function App() {
   return (
     <>
       <TopNav />
-      <main className="page">
+      <main className={`page ${inReview ? 'wide' : ''}`}>
         <PatientHeader consulta={consulta} dataHora={startedAt ? fmtDateTime(startedAt) : null} />
         <Stepper current={stepIdx} />
 
@@ -235,20 +235,18 @@ export default function App() {
             </div>
 
             <div className="grid-review">
-              <DraftView
+              <DraftLeft
                 draft={draft}
                 locked={locked}
                 flash={flash}
-                conflicts={conflicts}
-                ackedAlert={alertAcked}
-                onAck={() => {
-                  setAckedKey(conflictKey);
-                  setDraft(touch);
-                }}
-                onFixAlert={(drug) => {
-                  setRightTab('chat');
-                  setPrefill(`Substitua a ${drug} por paracetamol 750 mg`);
-                }}
+                conflictIds={conflicts.map((c) => c.rxId)}
+                onChange={onChange}
+                onEvidence={showEvidence}
+              />
+              <DraftCenter
+                draft={draft}
+                locked={locked}
+                flash={flash}
                 onChange={onChange}
                 onCid={onCid}
                 onEvidence={showEvidence}
@@ -284,6 +282,20 @@ export default function App() {
                 </div>
               </aside>
             </div>
+
+            <SafetyAlert
+              conflicts={conflicts}
+              acked={alertAcked}
+              locked={locked}
+              onAck={() => {
+                setAckedKey(conflictKey);
+                setDraft(touch);
+              }}
+              onFix={(drug) => {
+                setRightTab('chat');
+                setPrefill(`Substitua a ${drug} por paracetamol 750 mg`);
+              }}
+            />
 
             {!locked && (
               <div className="actionbar">
