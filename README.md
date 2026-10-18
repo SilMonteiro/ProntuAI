@@ -39,7 +39,7 @@ Regras da proposta cobertas: REG-01 (human-in-the-loop), REG-02 (fidelidade), RE
 
 
 
-# FUNCIONAMENTO REAL COM PROCESSAMENTO DE IA
+### FUNCIONAMENTO REAL COM PROCESSAMENTO DE IA
 
 Tela com Funcionamento Real → Usuário: **João Pedro Almeida**
 
