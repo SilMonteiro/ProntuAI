@@ -7,6 +7,7 @@ frontend/  React + Vite — tela do médico
 backend/   FastAPI — gravação/transcrição real via OpenAI
 ```
 
+
 ### Resumo do funcionamento
 
 O texto transcrito é enviado como conteúdo de entrada (user message) em uma chamada de API para o modelo de linguagem.
@@ -14,11 +15,13 @@ O texto transcrito é enviado como conteúdo de entrada (user message) em uma ch
 A requisição envia também um System Prompt *rigoroso* contendo as diretrizes médicas (formato SOAP, tradução de termos informais para terminologia técnica correta e regras de zero alucinação para dados ausentes). A IA retorna o prontuário limpo e perfeitamente estruturado em formato JSON ou Markdown pronto para exibição na tela.
 
 
+
 ### Modos de gravação
 - **Microfone real** (padrão): grava pelo navegador, envia ao backend ao parar e mostra a transcrição com médico/paciente. Também aceita envio de arquivo de áudio.
 - **Consulta simulada**: reproduz a consulta mockada (Maria Aparecida Souza), sem backend — útil como plano B na apresentação.
 
 > O chat usa o assistente GPT do backend (`/api/assistant/chat`). Se ele estiver indisponível, o chat avisa e responde com regras locais. O rascunho SOAP inicial ainda é de exemplo.
+
 
 
 ### Roteiro para DEMO
@@ -39,7 +42,8 @@ Regras da proposta cobertas: REG-01 (human-in-the-loop), REG-02 (fidelidade), RE
 
 
 
-# FUNCIONAMENTO REAL COM PROCESSAMENTO DE IA
+
+### FUNCIONAMENTO REAL COM PROCESSAMENTO DE IA
 
 Tela com Funcionamento Real → Usuário: **João Pedro Almeida**
 
@@ -48,6 +52,7 @@ Diferente da versão mockada, esta tela lida com o fluxo operacional real. No ce
 > Protótipo: o áudio é enviado à OpenAI. Não use dados reais de pacientes, utilize de preferência um áudio gravado por si mesmo.
 
 Fluxo resumido: O áudio capturado é enviado para o backend, passa pelo motor de transcrição e em seguida é processado pela inteligência artificial aplicando as regras estritas da skill do ProntuAI (garantindo fidelidade aos fatos relatados e estruturação SOAP sem alucinações).
+
 
 
 ## Backend (transcrição)
@@ -71,6 +76,7 @@ python -m pytest -q           # testes
 | `POST /api/transcriptions` | Campo `audio` (multipart, até 25 MB; webm, ogg, mp3, m4a, wav, flac, mp4) |
 | `GET /api/transcriptions/{id}` | Baixa o JSON salvo em `backend/data/transcriptions/` |
 | `POST /api/assistant/chat` | Assistente de IA (`CHAT_MODEL`, padrão `gpt-4o-mini`): recebe o rascunho, o histórico e a transcrição, e devolve a resposta e o rascunho revisado. Dados de identificação e evidências dos CIDs são preservados pelo servidor. |
+
 
 
 ## Frontend
