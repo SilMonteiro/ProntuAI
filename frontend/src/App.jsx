@@ -265,6 +265,18 @@ export default function App() {
   const send = async (text) => {
     if (busyRef.current) return;
     busyRef.current = true;
+    // Consulta simulada: regras locais, sem chamadas à IA (sem custo de tokens).
+    if (patient.demo) {
+      setMessages((m) => [...m, { role: 'user', text }]);
+      setTyping(true);
+      setTimeout(() => {
+        const res = respond(text, draftRef.current);
+        applyResult(res.draft, res.changed, res.reply, res.log, '*Simulação — regras locais, sem IA:* ');
+        setTyping(false);
+        busyRef.current = false;
+      }, 500);
+      return;
+    }
     const history = messages
       .filter((m) => m.role !== 'system')
       .slice(-10)
@@ -342,7 +354,7 @@ export default function App() {
   return (
     <>
       <TopNav />
-      <main className={`page ${inReview ? 'wide' : ''}`}>
+      <main className="page">
         <div className="no-print"><PatientHeader consulta={consulta} dataHora={startedAt ? fmtDateTime(startedAt) : null} patient={patient} patients={PACIENTES} onSelect={switchPatient} /></div>
         {phase === 'final' ? (
           <div className="done-icon" role="img" aria-label="Consulta concluída">

@@ -1,0 +1,82 @@
+/* ---------- modo escuro (ativado por data-theme="dark" no <html>) ---------- */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --primary: #3d8bff;
+  --primary-deep: #6aa6ff;
+  --primary-tint: rgba(61, 139, 255, 0.18);
+  --ink-button: #eef1f4;
+  --canvas: #12161b;
+  --surface-soft: #1c222a;
+  --ink-deep: #eef1f4;
+  --ink: #dfe3e8;
+  --charcoal: #b5bdc6;
+  --steel: #98a3ae;
+  --stone: #75818d;
+  --hairline: #3a434d;
+  --hairline-soft: #2a323b;
+  --disabled: #3b434c;
+  --fb-blue: #5b9dff;
+}
+
+/* Elementos com fundo "tinta" passam a ter texto escuro */
+[data-theme='dark'] .btn-primary,
+[data-theme='dark'] .btn-black,
+[data-theme='dark'] .avatar.sm,
+[data-theme='dark'] .line.doc .who-dot,
+[data-theme='dark'] .soap-letter,
+[data-theme='dark'] .msg.user .msg-bubble,
+[data-theme='dark'] .toast,
+[data-theme='dark'] .pill-tab.active,
+[data-theme='dark'] .mode-switch .pill-tab.active,
+[data-theme='dark'] .speed .pill-tab.active { color: #0d1117; }
+[data-theme='dark'] .btn-primary:active,
+[data-theme='dark'] .btn-black:active { background: #c9d0d7; }
+[data-theme='dark'] .btn:disabled { color: #7d8792; }
+[data-theme='dark'] .btn-ghost { border-color: rgba(255, 255, 255, 0.16); }
+[data-theme='dark'] .badge-warning { color: #0a1317; }
+
+/* Logo: o nome em tinta escura fica claro no fundo escuro (a folha A4 mantém o original) */
+[data-theme='dark'] .brand img:last-child { filter: invert(1) hue-rotate(180deg); }
+
+/* Superfícies com cor fixa clara */
+[data-theme='dark'] .line.pat .bubble { background: #1b2a40; }
+[data-theme='dark'] .row.conflict { background: rgba(228, 30, 63, 0.14); box-shadow: 0 0 0 5px rgba(228, 30, 63, 0.14); }
+[data-theme='dark'] .alert { background: rgba(228, 30, 63, 0.12); color: #ffb3bf; }
+[data-theme='dark'] .alert-body strong { color: #ff6b81; }
+[data-theme='dark'] .alert.acked { background: rgba(247, 185, 40, 0.1); color: var(--charcoal); }
+[data-theme='dark'] .error { background: rgba(228, 30, 63, 0.14); color: #ff8c9e; }
+[data-theme='dark'] .acc-head:hover { background: #1a2028; }
+[data-theme='dark'] .acc-item.seen .acc-head { background: #17233a; }
+[data-theme='dark'] .arrow-btn:hover,
+[data-theme='dark'] .patient-menu button:hover,
+[data-theme='dark'] .mode-switch .pill-tab:hover,
+[data-theme='dark'] .speed .pill-tab:hover { background: #1a2a44; }
+[data-theme='dark'] .field-actions .btn-outline-ok { background: rgba(49, 162, 76, 0.15); color: #5fcf7c; border-color: #3f9f59; }
+[data-theme='dark'] .field-actions .btn-outline-ok:hover { background: rgba(49, 162, 76, 0.25); }
+[data-theme='dark'] .cid-actions .btn-outline-ok { border-color: rgba(49, 162, 76, 0.4); color: #6cc283; }
+[data-theme='dark'] .cid.aceita { background: rgba(49, 162, 76, 0.1); }
+[data-theme='dark'] .nav-tab:disabled,
+[data-theme='dark'] .nav-tab:disabled:hover { color: #59636e; }
+[data-theme='dark'] .finish-zone { border-color: var(--hairline); }
+
+/* Iniciar gravação: vermelho sutil adaptado ao fundo escuro */
+[data-theme='dark'] .btn-rec { background: rgba(228, 30, 63, 0.12); color: #ff8c9e; border-color: rgba(228, 30, 63, 0.4); }
+[data-theme='dark'] .btn-rec:hover { background: rgba(228, 30, 63, 0.2); border-color: #e8788c; color: #ffb3bf; }
+[data-theme='dark'] .btn-rec:active { background: rgba(228, 30, 63, 0.28); }
+
+/* Sombras mais fortes para destacar camadas no escuro */
+[data-theme='dark'] .assist-panel,
+[data-theme='dark'] .patient-menu { box-shadow: rgba(0, 0, 0, 0.55) 0 12px 40px 0; }
+[data-theme='dark'] .sheet { border-color: #2a323b; box-shadow: rgba(0, 0, 0, 0.5) 0 8px 32px 0; }
+
+/* Botão de tema */
+.theme-toggle svg { transition: transform 0.3s; }
+.theme-toggle:hover svg { transform: rotate(20deg); }
+.theme-toggle:hover { border-color: var(--primary); color: var(--primary); }
+
+[data-theme='dark'] .acc-item { background: #171c22; }
+[data-theme='dark'] .acc-head:hover { background: #1f262e; }
+
+[data-theme='dark'] .row { background: #161b21; border-color: var(--hairline-soft); }
+[data-theme='dark'] .row.conflict { background: rgba(228, 30, 63, 0.12); border-color: rgba(228, 30, 63, 0.4); }
+[data-theme='dark'] .field > .btn-ghost.btn-sm:hover { background: #1a2a44; }

@@ -203,7 +203,6 @@ export function AssessmentBody({ draft, evidence, locked, flash, onChange, onCid
         <div className="field-head">
           <label>Sugestões de CID-10</label>
           <div className="field-actions">
-            <span className="muted small">Aceite ou rejeite cada sugestão (REG-05)</span>
             {!locked && pending > 0 && (
               <button type="button" className="btn btn-sm btn-outline-ok" onClick={onAcceptAll}>
                 <IconCheck width={14} height={14} /> Aceitar todos
