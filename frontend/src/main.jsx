@@ -5,5 +5,6 @@ import './styles.css';
 import './styles-review.css';
 import './styles-dark.css';
 import './styles-history.css';
+import './styles-recepcao.css';
 
 createRoot(document.getElementById('root')).render(<App />);

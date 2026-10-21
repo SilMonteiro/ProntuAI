@@ -47,9 +47,16 @@ const moonIcon = (
   </svg>
 );
 
-export function TopNav() {
+const TABS = [
+  { id: 'atendimento', label: 'Atendimento' },
+  { id: 'recepcao', label: 'Recepção' },
+  { id: 'agenda', label: 'Agenda', soon: true },
+  { id: 'pacientes', label: 'Pacientes', soon: true },
+  { id: 'historico', label: 'Histórico', soon: true },
+];
+
+export function TopNav({ screen, onNavigate }) {
   const [theme, toggleTheme] = useTheme();
-  const tabs = ['Atendimento', 'Agenda', 'Pacientes', 'Histórico'];
   return (
     <header className="nav">
       <div className="nav-inner">
@@ -58,9 +65,17 @@ export function TopNav() {
           <LogoNome />
         </div>
         <nav className="nav-tabs" aria-label="Principal">
-          {tabs.map((t, i) => (
-            <button key={t} className={`nav-tab ${i === 0 ? 'active' : ''}`} type="button" aria-current={i === 0 ? 'page' : undefined} disabled={i !== 0} title={i === 0 ? undefined : 'Em breve'}>
-              {t}
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              className={`nav-tab ${t.id === screen ? 'active' : ''}`}
+              type="button"
+              aria-current={t.id === screen ? 'page' : undefined}
+              disabled={t.soon}
+              title={t.soon ? 'Em breve' : undefined}
+              onClick={() => onNavigate(t.id)}
+            >
+              {t.label}
             </button>
           ))}
         </nav>

@@ -22,6 +22,7 @@ from pydantic import BaseModel, Field
 
 from .assistant import router as assistant_router
 from .prontuario import router as prontuario_router
+from .recepcao import router as recepcao_router
 
 BASE_DIR = Path(__file__).resolve().parent
 TRANSCRIPTIONS_DIR = BASE_DIR.parent / "data" / "transcriptions"
@@ -60,7 +61,7 @@ app = FastAPI(title="ProntuAI — API de transcrição")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=os.getenv("CORS_ORIGINS", "http://localhost:5180,http://127.0.0.1:5180").split(","),
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["*"],
 )
 
@@ -223,3 +224,4 @@ async def create_transcription(audio: UploadFile = File(...)) -> dict:
 
 app.include_router(assistant_router)
 app.include_router(prontuario_router)
+app.include_router(recepcao_router)

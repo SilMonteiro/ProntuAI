@@ -15,6 +15,7 @@ import { generateDraft } from './services/prontuario.js';
 import { buildInitialDraft, DURATION, EVIDENCE, PACIENTES, PROCESSING_STATS, SEGMENTS } from './data/mock.js';
 import { HISTORICO } from './data/historico.js';
 import HistoryView from './components/HistoryView.jsx';
+import Recepcao from './components/Recepcao.jsx';
 import { findAllergyConflicts, fmtDateTime, getIn, pendencias, setIn } from './lib/draft.js';
 import { respond } from './lib/chatEngine.js';
 
@@ -38,6 +39,7 @@ function welcomeFor(draft, stats) {
 }
 
 export default function App() {
+  const [screen, setScreen] = useState('atendimento'); // atendimento | recepcao
   const [patientId, setPatientId] = useState(PACIENTES[0].id);
   const [view, setView] = useState('atendimento'); // atendimento | historico | prontuarios
   const patient = PACIENTES.find((p) => p.id === patientId);
@@ -357,8 +359,13 @@ export default function App() {
 
   return (
     <>
-      <TopNav />
-      <main className="page">
+      <TopNav screen={screen} onNavigate={setScreen} />
+      {screen === 'recepcao' && (
+        <main className="page">
+          <Recepcao />
+        </main>
+      )}
+      <main className="page" hidden={screen !== 'atendimento'}>
         <div className="no-print">
           <PatientHeader
             consulta={consulta}
